@@ -267,6 +267,69 @@ section.lesson{padding:4.5rem 0 3rem;border-top:1px solid var(--rule)}
   .fl-agent-inner{grid-template-columns:1fr}
   .fl-box{min-height:0}
 }
+
+/* try / takeaway */
+.try-steps{padding-left:1.2rem;margin:.5rem 0 .75rem}
+.try-steps li{padding:.2rem 0}
+.takeaway{background:var(--surface);border:2px solid var(--ink);border-radius:10px;padding:1.1rem 1.25rem;height:100%}
+.ta-steps{padding-left:1.3rem;margin:0 0 .9rem}
+.ta-steps li{padding:.35rem 0 .35rem .2rem}
+.ta-steps li::marker{font-weight:800;color:var(--signal)}
+.ta-summary{border-top:1px dashed var(--rule);padding-top:.75rem}
+.takeaway-placeholder{border:1.5px dashed var(--rule);border-radius:10px;padding:2.5rem 1.25rem;color:var(--muted);text-align:center}
+
+/* system map shown in every section */
+.locator{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:.9rem 1rem 1rem}
+.loc-caption{font-size:.95rem;max-width:none;margin-bottom:.6rem}
+.loc-caption b{color:var(--signal)}
+.loc-scroll{overflow-x:auto;padding-bottom:4px}
+.loc-grid{position:relative;display:grid;min-width:960px;gap:44px 70px;
+  grid-template-columns:1fr 1fr 2.3fr 1.1fr;
+  grid-template-areas:"servers flume hdfs zk" ". prod cluster cons"}
+.loc-node{position:relative;z-index:1;border:1.5px solid var(--rule);border-radius:8px;background:#fff;padding:.45rem .55rem;font-size:.8rem;transition:opacity .25s,border-color .25s,background .25s}
+.loc-title{font-weight:750;font-stretch:110%;font-size:.86rem}
+.loc-sub{color:var(--muted);font-size:.72rem;line-height:1.3}
+.loc-items{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+.loc-item{border:1px solid var(--rule);border-radius:4px;padding:0 5px;font-size:.7rem;font-weight:600;background:#fff}
+.loc-flow{display:flex;gap:3px;align-items:center;margin-top:4px;font-size:.7rem;font-weight:600}
+.loc-flow span{border:1px solid var(--rule);border-radius:4px;padding:0 5px}
+.loc-retired{border-style:dashed;background:#FBF6E9}
+.loc-cluster{border:2px solid var(--ink);padding:.5rem .6rem .6rem}
+.loc-ctrls{display:flex;align-items:center;gap:4px;border:1.5px solid var(--signal);background:var(--signal-soft);border-radius:6px;padding:3px 6px;margin:4px 0 6px;font-size:.7rem;font-weight:600}
+.loc-ctrls .cn{border:1.5px solid var(--signal);border-radius:4px;background:#fff;padding:0 4px;font-size:.66rem}
+.loc-ctrls .cap{margin-right:auto}
+.loc-brokers{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.loc-broker{border:1.5px solid var(--rule);border-radius:6px;padding:4px 5px;background:#fff}
+.lb-name{font-weight:700;font-size:.74rem}
+.lb-topic{font-size:.64rem;color:var(--muted);border-top:1px dashed var(--rule);margin-top:2px;padding-top:2px}
+.lb-parts{display:flex;gap:3px;margin-top:3px}
+.lb-parts span{font-size:.64rem;font-weight:700;border:1.5px solid var(--ink);border-radius:3px;padding:0 4px;background:#fff}
+.lb-parts span.lead{background:var(--ink);color:#fff}
+.loc-arrows{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:2;pointer-events:none}
+.loc-arrows path{fill:none;stroke:var(--ink);stroke-width:1.6}
+.loc-arrows .dashed path{stroke-dasharray:5 4}
+.loc-arrows text{font-size:10.5px;font-weight:700;fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:4px}
+/* states */
+.locator .dim{opacity:.22}
+.locator .soft{opacity:.6}
+.locator .loc-cluster.soft,.locator .loc-cluster.dim,.locator .loc-broker.soft,.locator .loc-broker.dim{opacity:1}
+.locator .loc-cluster.soft>.loc-title,.locator .loc-broker.soft>.lb-name{opacity:.6}
+.locator .loc-cluster.dim>.loc-title,.locator .loc-broker.dim>.lb-name{opacity:.22}
+.locator .loc-cluster.dim{border-color:#D9DEE3}
+.locator .loc-broker.dim{border-color:#EEF1F4}
+.locator .loc-node.lit,.locator .loc-broker.lit{border-color:var(--signal);box-shadow:0 0 0 2px var(--signal)}
+.locator .loc-cluster.lit{border-color:var(--ink);box-shadow:0 0 0 3px var(--signal-soft)}
+.locator .loc-item.lit,.locator .loc-flow span.lit{border-color:var(--signal);background:var(--signal-soft)}
+.locator .lb-topic.lit{color:var(--signal);font-weight:700}
+.locator .lb-parts span.lit{box-shadow:0 0 0 2px var(--signal)}
+.locator .loc-ctrls.lit{box-shadow:0 0 0 2px var(--signal)}
+.locator g.lit path{stroke:var(--signal);stroke-width:2.4}
+.locator g.lit text{fill:var(--signal)}
+.loc-hint{font-size:.75rem;color:var(--muted);margin-top:.35rem}
+.where-tag{font-size:.76rem;color:var(--signal);font-weight:600;line-height:1.3}
+.cluster-frame{border:2px solid var(--ink);border-radius:12px;padding:1.4rem .75rem .75rem;position:relative}
+.cluster-frame-label{position:absolute;top:-.75rem;left:.9rem;background:var(--paper);padding:0 .4rem;font-weight:750;font-stretch:112%}
+@media (min-width: 992px){ .loc-hint{display:none} }
 footer{border-top:1px solid var(--rule);padding:2rem 0 3rem;color:var(--muted);font-size:.9rem}
 
 @media (max-width: 767.98px){
@@ -338,38 +401,7 @@ footer{border-top:1px solid var(--rule);padding:2rem 0 3rem;color:var(--muted);f
       </div>
     </div>
 
-    <!-- system diagram -->
-    <div class="panel mb-4">
-      <div class="panel-title">The whole system in one picture</div>
-      <div class="sysmap">
-        <div class="sys-col">
-          <div class="sys-label">Producers</div>
-          <div class="sys-app"><span class="key-swatch" style="background:var(--k-web01)"></span>Web servers</div>
-          <div class="sys-app"><span class="key-swatch" style="background:var(--k-fw01)"></span>Firewall</div>
-          <div class="sys-app"><span class="key-swatch" style="background:var(--k-vpn01)"></span>VPN gateway</div>
-          <div class="sys-note">Client apps that write events</div>
-        </div>
-        <div class="sys-arrow" aria-hidden="true"><span>write</span></div>
-        <div class="sys-cluster">
-          <div class="sys-label">Kafka cluster</div>
-          <div class="sys-ctrl">Controllers keep the cluster metadata: live brokers, topics, partition leaders</div>
-          <div class="sys-brokers">
-            <div class="sys-broker"><b>Broker 1</b><span class="rchip lead">P0</span><span class="rchip">P1</span><span class="rchip">P2</span></div>
-            <div class="sys-broker"><b>Broker 2</b><span class="rchip">P0</span><span class="rchip lead">P1</span><span class="rchip">P2</span></div>
-            <div class="sys-broker"><b>Broker 3</b><span class="rchip">P0</span><span class="rchip">P1</span><span class="rchip lead">P2</span></div>
-          </div>
-          <div class="sys-note">Topic <code>security-events</code>: 3 partitions, each stored on 3 brokers. Dark copy = leader.</div>
-        </div>
-        <div class="sys-arrow" aria-hidden="true"><span>read</span></div>
-        <div class="sys-col">
-          <div class="sys-label">Consumer groups</div>
-          <div class="sys-app">Alerting <small>group <code>alerting</code></small></div>
-          <div class="sys-app">HDFS archive <small>group <code>archive</code></small></div>
-          <div class="sys-app">Dashboard <small>group <code>dashboard</code></small></div>
-          <div class="sys-note">Each group reads every event</div>
-        </div>
-      </div>
-    </div>
+    <div class="locator mb-4" data-loc="basics"></div>
 
     <h3 class="mb-3">The vocabulary</h3>
     <dl class="glossary mb-4">
@@ -416,6 +448,17 @@ footer{border-top:1px solid var(--rule);padding:2rem 0 3rem;color:var(--muted);f
         </ol>
       </div>
     </div>
+
+    <div class="takeaway mt-4" style="height:auto">
+      <div class="panel-title">The takeaway</div>
+      <ol class="ta-steps">
+        <li><b>Kafka sits in the middle.</b> Producers and consumers never talk to each other directly, so either side can change or grow without touching the other.</li>
+        <li><b>Data is organised as topic, then partition, then offset.</b> A topic is the stream, partitions split it so it can be stored and read in parallel, and an offset is an event's permanent position in its partition.</li>
+        <li><b>A cluster is brokers plus controllers.</b> Brokers store copies of the partitions and serve reads and writes. Controllers keep the cluster's own records. Producers and consumers are client applications outside the cluster.</li>
+        <li><b>Reading does not delete.</b> Each consumer group keeps its own offset. Events are removed only when retention expires, which is what makes replay and many independent readers possible.</li>
+      </ol>
+      <p class="ta-summary mb-0"><b>In one sentence:</b> Kafka is a replicated, partitioned log that many producers append to and many consumer groups read independently, and it keeps the data whether or not anyone has read it.</p>
+    </div>
   </div>
 </section>
 
@@ -429,11 +472,13 @@ footer{border-top:1px solid var(--rule);padding:2rem 0 3rem;color:var(--muted);f
         <p class="mb-0">A <strong>topic</strong> is a named stream, here <code>security-events</code>. It is split into <strong>partitions</strong> so several machines can share the work. The message <strong>key</strong> decides the partition: the same key always lands in the same partition, which is how Kafka keeps events for one host in order.</p>
       </div>
     </div>
+    <div class="locator mb-3" data-loc="log"></div>
 
     <div class="row g-3">
       <div class="col-lg-4">
         <div class="panel h-100" id="producer1">
-          <div class="panel-title">Producer</div>
+          <div class="panel-title mb-0">Producer app</div>
+          <div class="where-tag">outside the cluster</div>
           <div class="mb-2 small muted">Choose the key (the host that produced the event)</div>
           <div class="d-flex flex-wrap gap-2 mb-3" role="radiogroup" aria-label="Message key" id="keyGroup"></div>
           <label class="small muted mb-1" for="eventText">Event</label>
@@ -455,7 +500,7 @@ footer{border-top:1px solid var(--rule);padding:2rem 0 3rem;color:var(--muted);f
       <div class="col-lg-8">
         <div class="panel h-100">
           <div class="d-flex justify-content-between align-items-baseline flex-wrap gap-2">
-            <div class="panel-title mb-0">Topic <code>security-events</code>, 3 partitions</div>
+            <div><div class="panel-title mb-0">Topic <code>security-events</code>, 3 partitions</div><div class="where-tag">inside the Kafka cluster: leader copies, P0 on broker 1, P1 on broker 2, P2 on broker 3</div></div>
             <div class="small muted">Hover a box to see the event</div>
           </div>
           <div id="partitions1" class="mt-2"></div>
@@ -463,8 +508,22 @@ footer{border-top:1px solid var(--rule);padding:2rem 0 3rem;color:var(--muted);f
       </div>
     </div>
 
-    <div class="note mt-3">
-      <strong>Try this.</strong> Send <code>web01</code> three times with different events, then <code>db01</code>. Both keys hash to partition 1, and their events stay in the order you sent them. Now send <code>fw01</code>: it goes to partition 0. Order is guaranteed <em>within</em> a partition, never across the whole topic. Events with no key are spread across partitions, so they have no ordering guarantee at all.
+    <div class="row g-3 mt-0">
+      <div class="col-lg-5">
+        <div class="note h-100">
+          <strong>Try this, in order</strong>
+          <ol class="try-steps"><li>Press <b>Clear topic</b>. Choose <b>web01</b> and press <b>Send event</b> three times, picking a different event each time.</li><li>Choose <b>db01</b> and send one event.</li><li>Choose <b>fw01</b> and send one event, then <b>vpn01</b> and send one.</li><li>Choose <b>no key</b> and send four events.</li><li>Press <b>Send 10 random</b>, then hover over a few boxes in each partition.</li></ol>
+          <button class="btn btn-ink btn-sm mt-1" type="button" data-reveal="takeawayLog" aria-expanded="false" aria-controls="takeawayLog">Show what happened</button>
+        </div>
+      </div>
+      <div class="col-lg-7">
+        <div class="takeaway" id="takeawayLog" hidden>
+          <div class="panel-title">What happened, and why</div>
+          <ol class="ta-steps"><li><b>web01 went to partition 1, at offsets 0, 1 and 2, in the order you sent them.</b> The producer hashes the key and divides by the number of partitions, so the same key always lands in the same partition. Inside a partition events are only ever appended, so web01's events keep their order.</li><li><b>db01 landed in partition 1 too, right after web01.</b> There are far more keys than partitions, so different keys share partitions. That is fine: each key's own events are still in order, they are just interleaved with another key's.</li><li><b>fw01 went to partition 0 and vpn01 to partition 2, each starting again at offset 0.</b> Offsets count separately in each partition. "Offset 2" means nothing on its own: an event is identified by topic, partition and offset together.</li><li><b>The four no-key events were spread across P0, P1 and P2.</b> With no key there is nothing to hash, so the producer spreads events for even load. The price is that there is no ordering between them at all.</li><li><b>Older events never moved or changed number.</b> The log is append-only. New events go to the end with the next offset; nothing is inserted, edited or renumbered.</li></ol>
+          <p class="ta-summary mb-0"><b>In one sentence:</b> the key decides the partition, a partition is an append-only log numbered by offsets, and Kafka guarantees order within a partition, which means order per key.</p>
+        </div>
+        <div class="takeaway-placeholder" id="takeawayLogHint">Do the steps first, then press <b>Show what happened</b> to check your observations.</div>
+      </div>
     </div>
   </div>
 </section>
@@ -479,6 +538,7 @@ footer{border-top:1px solid var(--rule);padding:2rem 0 3rem;color:var(--muted);f
         <p class="mb-0">Consumers in one <strong>group</strong> split the partitions between them, so each event is processed once per group. A consumer reads by moving its <strong>committed offset</strong> forward. <strong>Lag</strong> is how far that bookmark is behind the end of the log. A second application in a different group gets its own bookmarks and reads everything again.</p>
       </div>
     </div>
+    <div class="locator mb-3" data-loc="groups"></div>
 
     <div class="panel mb-3">
       <div class="row g-3 align-items-end">
@@ -507,14 +567,14 @@ footer{border-top:1px solid var(--rule);padding:2rem 0 3rem;color:var(--muted);f
     <div class="row g-3">
       <div class="col-lg-7">
         <div class="panel h-100">
-          <div class="panel-title">Partitions and bookmarks</div>
+          <div class="panel-title mb-0">Partitions of <code>security-events</code> and each group's bookmark</div><div class="where-tag mb-2">inside the Kafka cluster; bookmarks are stored in the internal topic <code>__consumer_offsets</code></div>
           <div id="tracks"></div>
           <p class="small muted mt-2 mb-0">The grey bar is the log. Markers show where each group has read up to. Nothing is removed when a group reads.</p>
         </div>
       </div>
       <div class="col-lg-5">
         <div class="panel h-100">
-          <div class="panel-title">Group <code>alerting</code></div>
+          <div class="panel-title mb-0">Consumer group <code>alerting</code></div><div class="where-tag mb-2">consumer apps, outside the cluster</div>
           <div class="row g-2" id="consumersA"></div>
           <div id="groupBWrap" class="d-none">
             <div class="panel-title mt-3">Group <code>archive</code></div>
@@ -524,8 +584,32 @@ footer{border-top:1px solid var(--rule);padding:2rem 0 3rem;color:var(--muted);f
       </div>
     </div>
 
-    <div class="note mt-3">
-      <strong>Try this.</strong> Turn on producers and consumers with one consumer, and watch lag grow. Slide to 3 consumers: the group rebalances and lag falls. Slide to 5: two consumers sit idle, because a partition goes to only one consumer in a group. <strong>Partition count is the ceiling on parallelism.</strong> Then add the <code>archive</code> group and replay it from 0. In a Flume channel an event is gone once the sink takes it. In Kafka, reading only moves a bookmark.
+    <div class="row g-3 mt-0">
+      <div class="col-lg-5">
+        <div class="note h-100">
+          <strong>Try this, in order</strong>
+          <ol class="try-steps">
+            <li>Set 1 consumer. Turn on <b>Producers sending</b> and <b>Consumers running</b>. Watch the lag numbers for about 15 seconds.</li>
+            <li>Slide to <b>3</b> consumers and watch the lag again.</li>
+            <li>Slide to <b>5</b> consumers and look at the group's cards.</li>
+            <li>Turn on <b>Add archive group</b>. When it has caught up, press <b>Replay archive from offset 0</b>.</li>
+          </ol>
+          <button class="btn btn-ink btn-sm mt-1" type="button" data-reveal="takeawayGroups" aria-expanded="false" aria-controls="takeawayGroups">Show what happened</button>
+        </div>
+      </div>
+      <div class="col-lg-7">
+        <div class="takeaway" id="takeawayGroups" hidden>
+          <div class="panel-title">What happened, and why</div>
+          <ol class="ta-steps">
+            <li><b>Lag grew with one consumer.</b> Producers write about 2 events per second, and one consumer handles about 1. Nothing was lost: the extra events waited in the log, and lag counted them. In a real system growing lag means alerts arrive later and later. Step 11's <code>kafka-consumer-groups.sh --describe</code> shows this as the LAG column.</li>
+            <li><b>Lag fell with three consumers.</b> The group paused briefly to rebalance, then gave each consumer one partition. Three consumers handle about 3 events per second, faster than the producers write, so they caught up. Kafka scales reading by starting more copies of the same app with the same group name. The producers and the topic did not change.</li>
+            <li><b>Two of five consumers sat idle.</b> In one group, each partition is read by exactly one consumer, which is how its order is kept. Three partitions means at most three busy consumers. The partition count you choose at topic creation is the ceiling on parallelism, so plan for future load. Adding partitions later changes which partition each key maps to.</li>
+            <li><b>The archive group read everything, then read it again.</b> It kept its own bookmarks, so it received every event the alerting group did without taking any away. Replay set its bookmarks back to 0 and it re-read the whole log, because reading never deleted anything. A Flume channel removes an event once its sink takes it: one destination, no second chance.</li>
+          </ol>
+          <p class="ta-summary mb-0"><b>In one sentence:</b> a consumer group scales by adding consumers up to the number of partitions, lag shows how far it is behind, and because reading only moves an offset, any number of groups can read and replay the same data independently.</p>
+        </div>
+        <div class="takeaway-placeholder h-100" id="takeawayGroupsHint">Run the four steps first, then press <b>Show what happened</b> to check your observations.</div>
+      </div>
     </div>
   </div>
 </section>
@@ -540,6 +624,7 @@ footer{border-top:1px solid var(--rule);padding:2rem 0 3rem;color:var(--muted);f
         <p class="mb-0">Each partition is copied to several brokers. One copy is the <strong>leader</strong> and takes all writes. The others are <strong>followers</strong> that copy the leader. Followers that are fully caught up form the <strong>in-sync replica set (ISR)</strong>. If a leader's broker dies, an in-sync follower takes over, and no acknowledged event is lost.</p>
       </div>
     </div>
+    <div class="locator mb-3" data-loc="replication"></div>
 
     <div class="panel mb-3">
       <div class="row g-3 align-items-end">
@@ -562,19 +647,21 @@ footer{border-top:1px solid var(--rule);padding:2rem 0 3rem;color:var(--muted);f
     <div class="row g-3">
       <div class="col-lg-2 col-md-12">
         <div class="panel h-100 d-flex flex-lg-column gap-2 align-items-center justify-content-center text-center" id="repProducer">
-          <div class="fw-bold">Producer</div>
+          <div class="fw-bold">Producer app</div><div class="where-tag">outside the cluster</div>
           <div class="small muted" id="repProducerState">ready</div>
         </div>
       </div>
       <div class="col-lg-10">
-        <div class="row g-3" id="brokers"></div>
+        <div class="cluster-frame"><div class="cluster-frame-label">Kafka cluster</div><div class="row g-3" id="brokers"></div></div>
       </div>
     </div>
 
     <div class="row g-3 mt-0">
       <div class="col-lg-7">
         <div class="note h-100">
-          <strong>Try this.</strong> Write a few events to partition 0 with <code>acks=all</code>: the acknowledgement returns only after every in-sync copy has it. Kill broker 1: partition 0's leader moves to an in-sync follower. Kill broker 2 as well: only one copy is left, so <code>acks=all</code> writes are refused rather than risking loss. Switch to <code>acks=1</code> and the write succeeds, but it now lives on one disk. Restart the brokers and watch them catch up and rejoin the ISR.
+          <strong>Try this, in order</strong>
+          <ol class="try-steps"><li>Press <b>Reset cluster</b>. Keep <b>acks=all</b> and write 3 events to <b>Partition 0</b>. Follow the dots.</li><li>Press <b>Kill broker 1</b>. Read the newest line under <b>What happened</b>.</li><li>Write another event to Partition 0.</li><li>Press <b>Kill broker 2</b>, then write to Partition 0 again.</li><li>Switch to <b>acks=1</b> and write once more.</li><li>Restart broker 1, then broker 2, and watch their numbers.</li></ol>
+          <button class="btn btn-ink btn-sm mt-1" type="button" data-reveal="takeawayRep" aria-expanded="false" aria-controls="takeawayRep">Show what happened</button>
         </div>
       </div>
       <div class="col-lg-5">
@@ -584,6 +671,14 @@ footer{border-top:1px solid var(--rule);padding:2rem 0 3rem;color:var(--muted);f
         </div>
       </div>
     </div>
+    <div class="row g-3 mt-0"><div class="col-12">
+        <div class="takeaway" id="takeawayRep" hidden>
+          <div class="panel-title">What happened, and why</div>
+          <ol class="ta-steps"><li><b>Each event went to broker 1, was copied to brokers 2 and 3, and only then was acknowledged.</b> Broker 1 leads partition 0, so it takes the write. With acks=all the producer hears "stored" only after every in-sync copy has the event, so an acknowledged event already exists on three disks.</li><li><b>Broker 1 died and partition 0's leader moved to broker 2.</b> Broker 2 was in the in-sync set, so it had every acknowledged event. Nothing was lost: producers and consumers simply switched to the new leader. Partitions 1 and 2 only lost a follower copy.</li><li><b>The next write still succeeded, with two copies.</b> Two in-sync copies meets min.insync.replicas=2, so acks=all can still be satisfied.</li><li><b>With broker 2 also gone, the write was refused with NotEnoughReplicas.</b> Only one copy was left. Kafka would rather refuse the write, so the producer can retry later, than acknowledge something that one disk failure could erase.</li><li><b>acks=1 accepted the same write.</b> The leader acknowledged as soon as it stored the event. It is faster and keeps working when brokers are down, but that event now lives on a single disk. acks=1 trades safety for availability.</li><li><b>The restarted brokers copied what they missed, then rejoined the in-sync set.</b> A returning broker catches up from the leader before it counts as in sync again. Leadership stays where it moved; real Kafka later hands it back to the original "preferred" broker automatically.</li></ol>
+          <p class="ta-summary mb-0"><b>In one sentence:</b> every partition is copied to several brokers, an in-sync follower takes over when a leader dies, and acks=all with min.insync.replicas=2 guarantees an acknowledged event is on at least two disks.</p>
+        </div>
+        <div class="takeaway-placeholder" id="takeawayRepHint">Do the steps first, then press <b>Show what happened</b> to check your observations.</div>
+    </div></div>
   </div>
 </section>
 
@@ -597,6 +692,7 @@ footer{border-top:1px solid var(--rule);padding:2rem 0 3rem;color:var(--muted);f
         <p class="mb-0">Someone must remember which brokers are alive, which topics exist and who leads each partition. That is <strong>cluster metadata</strong>, and it is managed by one <strong>controller</strong>. For years Kafka stored it in a separate system, <strong>ZooKeeper</strong>. With <strong>KRaft</strong> (Kafka + Raft), Kafka stores it in its own replicated log, and Kafka 4.0 removed ZooKeeper entirely.</p>
       </div>
     </div>
+    <div class="locator mb-3" data-loc="kraft"></div>
 
     <div class="panel mb-3">
       <div class="row g-3 align-items-end">
@@ -677,7 +773,9 @@ footer{border-top:1px solid var(--rule);padding:2rem 0 3rem;color:var(--muted);f
     <div class="row g-3 mt-0">
       <div class="col-lg-7">
         <div class="note h-100">
-          <strong>What to notice.</strong> On the ZooKeeper side, the new controller starts with nothing and must read every partition's record back from a different system before it can act, and because the controller was also a broker, its partitions are leaderless until then. Raise the partition count and the gap widens. On the KRaft side, every standby controller has been following the metadata log all along, so the takeover is a quick vote, and failing a controller does not take any of your data offline.
+          <strong>Try this, in order</strong>
+          <ol class="try-steps"><li>Leave <b>100,000</b> partitions and press <b>Fail both controllers at once</b>. Watch both clocks and both step lists.</li><li>During the race, compare <b>Partitions without a leader</b> on each side.</li><li>Press <b>Reset</b>, choose <b>1,000</b> partitions, and race again.</li><li>Reset, choose <b>200,000</b>, and race again.</li><li>Compare the <b>Systems to install, secure and monitor</b> rows.</li></ol>
+          <button class="btn btn-ink btn-sm mt-1" type="button" data-reveal="takeawayKr" aria-expanded="false" aria-controls="takeawayKr">Show what happened</button>
         </div>
       </div>
       <div class="col-lg-5">
@@ -688,6 +786,14 @@ footer{border-top:1px solid var(--rule);padding:2rem 0 3rem;color:var(--muted);f
         </div>
       </div>
     </div>
+    <div class="row g-3 mt-0"><div class="col-12">
+        <div class="takeaway" id="takeawayKr" hidden>
+          <div class="panel-title">What happened, and why</div>
+          <ol class="ta-steps"><li><b>At 100,000 partitions, ZooKeeper mode took several times longer than KRaft.</b> Nearly all of that time was step 3. The new ZooKeeper-era controller started with nothing and had to read every partition's record back from ZooKeeper before it could make a single decision.</li><li><b>A third of the partitions had no leader on the ZooKeeper side; KRaft showed 0.</b> In ZooKeeper mode the controller is also an ordinary broker, so its partitions lost their leader too, and nobody could elect new ones until the metadata was loaded. KRaft controllers are separate from the brokers, so brokers kept serving data while the controllers sorted themselves out.</li><li><b>At 1,000 partitions the gap shrank to about a second.</b> On small clusters there is little metadata to reload, so the ZooKeeper cost is barely visible, which is why the design lasted for years.</li><li><b>At 200,000 the ZooKeeper time grew again, and the KRaft time did not change.</b> ZooKeeper recovery grows with the amount of metadata. KRaft standbys have been replicating the __cluster_metadata log with Raft all along, so a takeover is just a quick vote, whatever the size.</li><li><b>Two systems against one.</b> ZooKeeper is a separate product with its own servers, security and upgrades. KRaft removes it: the controllers are Kafka. In your lab one process plays both broker and controller, which is fine for learning, but production clusters run three dedicated controllers.</li></ol>
+          <p class="ta-summary mb-0"><b>In one sentence:</b> KRaft moved Kafka's metadata from ZooKeeper into a Raft-replicated log inside Kafka, so standby controllers are always ready, failover no longer grows with cluster size, and there is one system to run instead of two.</p>
+        </div>
+        <div class="takeaway-placeholder" id="takeawayKrHint">Do the steps first, then press <b>Show what happened</b> to check your observations.</div>
+    </div></div>
   </div>
 </section>
 
@@ -701,6 +807,7 @@ footer{border-top:1px solid var(--rule);padding:2rem 0 3rem;color:var(--muted);f
         <p class="mb-0">Kafka stores and serves events, but something has to collect them from the servers that write log files. <strong>Apache Flume</strong> is a collector from the Hadoop ecosystem built for exactly that: you describe a pipeline in a config file, start an <strong>agent</strong>, and it moves log lines into HDFS, Kafka or another destination, with no code.</p>
       </div>
     </div>
+    <div class="locator mb-3" data-loc="flume"></div>
 
     <div class="row g-4 mb-4">
       <div class="col-lg-6">
@@ -749,12 +856,12 @@ a1.sinks.hdfs_sink.hdfs.path = hdfs://localhost:9000/user/flume/logs/%Y-%m-%d</s
 
     <div class="flume-flow" id="flFlow">
       <div class="fl-box" id="flLogBox">
-        <div class="fl-head">app.log <small>on local disk</small></div>
+        <div class="fl-head">app.log <small>a log file on the server's local disk</small></div>
         <div class="fl-cells" id="flLogCells"></div>
         <div class="fl-meta tnum" id="flLogMeta"></div>
       </div>
       <div class="fl-agent" id="flAgent">
-        <div class="fl-agent-label">Flume agent <code>a1</code>: one JVM process <span class="fl-state" id="flState">running</span></div>
+        <div class="fl-agent-label">Flume agent <code>a1</code>: one JVM process, running on the server <span class="fl-state" id="flState">running</span></div>
         <div class="fl-agent-inner">
           <div class="fl-box" id="flSrcBox">
             <div class="fl-head">Source <small id="flSrcType">exec</small></div>
@@ -774,7 +881,7 @@ a1.sinks.hdfs_sink.hdfs.path = hdfs://localhost:9000/user/flume/logs/%Y-%m-%d</s
         </div>
       </div>
       <div class="fl-box" id="flHdfsBox">
-        <div class="fl-head">HDFS <small>/user/flume/logs</small></div>
+        <div class="fl-head">HDFS <small>Hadoop storage, /user/flume/logs</small></div>
         <div class="fl-cells" id="flHdfsCells"></div>
         <div class="fl-meta tnum" id="flHdfsMeta"></div>
       </div>
@@ -798,11 +905,9 @@ a1.sinks.hdfs_sink.hdfs.path = hdfs://localhost:9000/user/flume/logs/%Y-%m-%d</s
       </div>
       <div class="col-lg-7">
         <div class="note h-100">
-          <strong>Try the three runs from the lab.</strong> For each, write 40 lines, crash the agent while the channel is still full, restart, and let it drain.<br>
-          <b>memory + exec:</b> everything in the channel, plus every line not read yet, is lost.<br>
-          <b>file + exec:</b> the channel's backlog survives on disk and is delivered after the restart, but <code>tail -F</code> restarts at the end of the file, so unread lines are still lost.<br>
-          <b>file + TAILDIR:</b> the source resumes from its saved position. Nothing is lost; a few lines may arrive twice. That is <strong>at-least-once</strong> delivery.<br>
-          Bonus: crash it, write 40 more lines while it is down, then restart with each source.
+          <strong>Try this, in order</strong>
+          <ol class="try-steps"><li>Set <b>memory</b> and <b>exec</b>. Press <b>Write 40 log lines</b>, and while the channel still has events, press <b>Crash the agent</b>. Restart and wait until <b>Still on their way</b> is 0. Note the score.</li><li>Switch the channel to <b>file</b> and repeat exactly.</li><li>Switch the source to <b>TAILDIR</b> and repeat exactly.</li><li>Bonus: crash the agent, write 40 more lines while it is down, then restart. Try it with exec, then with TAILDIR.</li><li>Below, in the small-files calculator, switch between <b>Defaults</b> and <b>Lab settings</b> at 100,000 lines.</li></ol>
+          <button class="btn btn-ink btn-sm mt-1" type="button" data-reveal="takeawayFl" aria-expanded="false" aria-controls="takeawayFl">Show what happened</button>
         </div>
       </div>
     </div>
@@ -838,6 +943,15 @@ a1.sinks.hdfs_sink.hdfs.path = hdfs://localhost:9000/user/flume/logs/%Y-%m-%d</s
         </div>
       </div>
     </div>
+
+    <div class="row g-3 mt-2"><div class="col-12">
+        <div class="takeaway" id="takeawayFl" hidden>
+          <div class="panel-title">What happened, and why</div>
+          <ol class="ta-steps"><li><b>memory + exec lost most of the lines.</b> Three groups disappeared at once. Events waiting in the channel lived in the JVM's RAM, which died with the process. Lines the source had read but not yet handed to the channel were also in RAM. And on restart, tail -F jumped to the end of the file, so every line it had not read was skipped. Only lines already in HDFS survived.</li><li><b>file + exec delivered the channel's backlog after the restart, but still lost lines.</b> The channel showed "safe on disk": its write-ahead log was replayed on restart, just like the replay in your flume.log. The source, though, still forgot its place. A few duplicates can appear when the sink had written a batch but crashed before removing it from the channel, so it was sent again.</li><li><b>file + TAILDIR lost nothing.</b> TAILDIR saves its read position to disk, so after the restart it carried on from where it had committed. With both the buffer and the position on disk, every line arrives at least once. Occasional duplicates are the price: at-least-once delivery.</li><li><b>Lines written while the agent was down: exec skipped them all, TAILDIR collected them.</b> This is the realistic case. Servers keep logging during an outage, and only a source that remembers its position can go back for those lines.</li><li><b>Defaults made 10,000 files of about 950 bytes; the lab settings made 1.</b> With rollCount=10 the sink closes a file every 10 events. Every file and block costs NameNode memory, and every small file becomes its own task when MapReduce or Spark reads the data. Rolling on size near one block avoids both problems.</li></ol>
+          <p class="ta-summary mb-0"><b>In one sentence:</b> a Flume pipeline is only as durable as its weakest in-memory part: a file channel protects the buffer, TAILDIR protects the read position, and the cost of both is possible duplicates.</p>
+        </div>
+        <div class="takeaway-placeholder" id="takeawayFlHint">Do the steps first, then press <b>Show what happened</b> to check your observations.</div>
+    </div></div>
 
     <!-- flume vs kafka -->
     <div class="row g-4 mt-2">
@@ -968,6 +1082,105 @@ function shake(el){ if(el && hasGsap && !reduceMotion) gsap.fromTo(el,{x:-6},{x:
     place();
   },1400);
 })();
+
+
+/* ---------- system map: shows where each simulation sits ---------- */
+const LOC_HTML=`
+<div class="loc-grid">
+  <div class="loc-node" data-part="servers" style="grid-area:servers">
+    <div class="loc-title">Servers</div><div class="loc-sub">web, firewall and VPN machines write log files</div>
+    <div class="loc-items"><span class="loc-item" data-part="logfile">web01 app.log</span><span class="loc-item" data-part="logfile">fw01 app.log</span></div>
+  </div>
+  <div class="loc-node" data-part="flume" style="grid-area:flume">
+    <div class="loc-title">Flume agent</div><div class="loc-sub">a collector process on the server</div>
+    <div class="loc-flow"><span data-part="flume-part">source</span>›<span data-part="flume-part">channel</span>›<span data-part="flume-part">sink</span></div>
+  </div>
+  <div class="loc-node" data-part="hdfs" style="grid-area:hdfs">
+    <div class="loc-title">HDFS</div><div class="loc-sub">Hadoop storage: NameNode plus DataNodes, files in /user/flume/logs</div>
+  </div>
+  <div class="loc-node loc-retired" data-part="zk" style="grid-area:zk">
+    <div class="loc-title">ZooKeeper</div><div class="loc-sub">a separate system that used to hold the metadata; not needed with KRaft</div>
+  </div>
+  <div class="loc-node" data-part="producers" style="grid-area:prod">
+    <div class="loc-title">Producer apps</div><div class="loc-sub">client programs that write events</div>
+    <div class="loc-items"><span class="loc-item">console producer</span><span class="loc-item">Flume Kafka sink</span></div>
+  </div>
+  <div class="loc-node loc-cluster" data-part="cluster" style="grid-area:cluster">
+    <div class="loc-title">Kafka cluster</div>
+    <div class="loc-ctrls" data-part="controllers"><span class="cap">Controllers (KRaft): the cluster's metadata</span><span class="cn">C1</span><span class="cn">C2</span><span class="cn">C3</span></div>
+    <div class="loc-brokers">
+      ${[1,2,3].map(b=>`<div class="loc-broker" data-part="broker">
+        <div class="lb-name">Broker ${b}</div>
+        <div class="lb-topic" data-part="topic">topic security-events</div>
+        <div class="lb-parts">${[0,1,2].map(p=>`<span class="${p===b-1?'lead':''}" data-part="${p===b-1?'p-leader':'p-follower'}">P${p}</span>`).join('')}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+  <div class="loc-node" data-part="consumers" style="grid-area:cons">
+    <div class="loc-title">Consumer groups</div><div class="loc-sub">client programs that read events</div>
+    <div class="loc-items"><span class="loc-item" data-part="g-alerting">alerting</span><span class="loc-item" data-part="g-archive">archive</span><span class="loc-item">dashboard</span></div>
+  </div>
+  <svg class="loc-arrows" aria-hidden="true"></svg>
+</div>`;
+const LOC_ARROWS=[
+  {part:'a-log',  from:'servers',  to:'flume',     label:'tail'},
+  {part:'a-hdfs', from:'flume',    to:'hdfs',      label:'HDFS sink'},
+  {part:'a-fk',   from:'flume',    to:'cluster',   label:'Kafka sink (lab step 12)'},
+  {part:'a-prod', from:'producers',to:'cluster',   label:'write'},
+  {part:'a-cons', from:'cluster',  to:'consumers', label:'read'},
+  {part:'a-zk',   from:'zk',       to:'controllers', label:'replaced', dashed:true, reverse:true}
+];
+const LOC_CONF={
+  basics:{lit:'*', cap:'<b>The whole system.</b> Every section below shows this same map and highlights the part its simulation is about. Dark partition boxes are leader copies; outlined ones are followers.'},
+  log:{lit:['producers','a-prod','cluster','topic','p-leader'], soft:['broker','controllers'],
+       cap:'<b>Where this happens:</b> a <b>producer app</b> writes events into <b>topic security-events</b>, inside the <b>Kafka cluster</b>. The topic is split into partitions, and each partition lives on a <b>broker</b>. The simulation shows the leader copy of each partition (the highlighted dark boxes); the follower copies come in section 3.'},
+  groups:{lit:['cluster','topic','p-leader','a-cons','consumers','g-alerting','g-archive'], soft:['broker','controllers','producers','a-prod'],
+       cap:'<b>Where this happens:</b> <b>consumer apps</b>, outside the cluster, read from the <b>partition leaders</b> on the brokers. Each group\'s bookmark (committed offset) is saved inside the cluster, so a restarted consumer carries on where its group left off.'},
+  replication:{lit:['producers','a-prod','cluster','broker','topic','p-leader','p-follower'], soft:['controllers'],
+       cap:'<b>Where this happens:</b> inside the <b>Kafka cluster</b>, across its three <b>brokers</b>. Each broker holds one copy of every partition of <b>topic security-events</b>: one leader (dark) and followers (outlined) that copy it. The controllers decide who leads.'},
+  kraft:{lit:['cluster','controllers','zk','a-zk'], soft:['broker','topic','p-leader','p-follower'],
+       cap:'<b>Where this happens:</b> in the <b>controllers</b>, the part of the cluster that keeps the metadata (which brokers are alive, which topics exist, who leads each partition), and in <b>ZooKeeper</b>, the separate system that used to hold it. Brokers are shown for context.'},
+  flume:{lit:['servers','logfile','a-log','flume','flume-part','a-hdfs','hdfs','a-fk'], soft:['cluster','controllers','broker','topic','p-leader','p-follower'],
+       cap:'<b>Where this happens:</b> before Kafka. A <b>Flume agent</b> runs on the <b>server</b>, reads its <b>log file</b>, and writes the lines to <b>HDFS</b> (lab steps 3 to 7). In step 12 the sink is swapped so the same agent writes into the <b>Kafka cluster</b> instead, becoming a producer.'}
+};
+function locDraw(loc){
+  const grid=loc.querySelector('.loc-grid'), svg=loc.querySelector('.loc-arrows'); if(!grid) return;
+  const g=grid.getBoundingClientRect(); if(!g.width) return;
+  const R=sel=>{ const r=grid.querySelector(`[data-part="${sel}"]`).getBoundingClientRect(); return {l:r.left-g.left,r:r.right-g.left,t:r.top-g.top,b:r.bottom-g.top,cx:r.left-g.left+r.width/2,cy:r.top-g.top+r.height/2}; };
+  const conf=LOC_CONF[loc.dataset.loc];
+  svg.setAttribute('viewBox',`0 0 ${g.width} ${g.height}`);
+  svg.innerHTML='<defs><marker id="ah'+loc.dataset.loc+'" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:context-stroke;stroke:none"/></marker></defs>'+
+  LOC_ARROWS.map(a=>{
+    const A=R(a.from), B=R(a.to);
+    let x1,y1,x2,y2;
+    if(a.reverse){ x1=A.l; y1=A.cy; x2=B.r; y2=B.cy; }
+    else { x1=A.r; y1=A.cy; x2=B.l; y2=B.cy; }
+    if(a.part==='a-fk'){ x1=A.r-24; y1=A.b; x2=B.l+36; y2=B.t; }
+    const dx=Math.abs(x2-x1)*0.5;
+    const d=a.part==='a-fk'?`M${x1},${y1} C${x1},${y1+26} ${x2},${y2-26} ${x2},${y2}`
+           :`M${x1},${y1} C${x1+(a.reverse?-dx:dx)},${y1} ${x2+(a.reverse?dx:-dx)},${y2} ${x2},${y2}`;
+    const mx=a.part==='a-fk'?(x1+x2)/2+70:(x1+x2)/2, my=a.part==='a-fk'?(y1+y2)/2+4:(y1+y2)/2-6;
+    return `<g data-part="${a.part}" class="${a.dashed?'dashed ':''}"><path d="${d}" marker-end="url(#ah${loc.dataset.loc})"/><text x="${mx}" y="${my}" text-anchor="middle">${a.label}</text></g>`;
+  }).join('');
+  locStyle(loc);
+}
+function locStyle(loc){
+  const conf=LOC_CONF[loc.dataset.loc];
+  loc.querySelectorAll('[data-part]').forEach(el=>{
+    const p=el.dataset.part;
+    el.classList.remove('lit','soft','dim');
+    if(conf.lit==='*') return;
+    el.classList.add(conf.lit.includes(p)?'lit':(conf.soft||[]).includes(p)?'soft':'dim');
+  });
+}
+document.querySelectorAll('.locator').forEach(loc=>{
+  const conf=LOC_CONF[loc.dataset.loc];
+  loc.innerHTML=`<p class="loc-caption">${conf.cap}</p><div class="loc-scroll">${LOC_HTML}</div><div class="loc-hint">Swipe sideways to see the whole map.</div>`;
+  locDraw(loc);
+  if('ResizeObserver' in window) new ResizeObserver(()=>locDraw(loc)).observe(loc.querySelector('.loc-grid'));
+});
+window.addEventListener('load',()=>document.querySelectorAll('.locator').forEach(locDraw));
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>document.querySelectorAll('.locator').forEach(locDraw));
 
 /* ---------- shared topic model used by lessons 0 and 1 ---------- */
 const topic={ parts:[[],[],[]], rr:0 };
@@ -1165,6 +1378,7 @@ function renderBrokers(){
   $('#brokers').innerHTML=rep.brokers.map(b=>`
     <div class="col-md-4"><div class="broker ${b.alive?'':'down'}" id="broker${b.id}">
       <div class="broker-head"><b>Broker ${b.id}</b><span class="status ${b.alive?'up':'dn'}">${b.alive?'running':'down'}</span></div>
+      <div class="where-tag mb-2">topic <code>security-events</code>: its copy of each partition</div>
       ${rep.parts.map(p=>{
         const isLeader=p.leader===b.id && b.alive, inIsr=p.isr.includes(b.id);
         const role=!b.alive?'offline':isLeader?'leader':inIsr?'follower, in sync':'follower, catching up';
@@ -1452,6 +1666,18 @@ function flRender(){
   sf();
 })();
 
+
+/* ---------- reveal takeaways ---------- */
+document.querySelectorAll('[data-reveal]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const box=document.getElementById(btn.dataset.reveal), hint=document.getElementById(btn.dataset.reveal+'Hint');
+    const open=box.hidden;
+    box.hidden=!open; if(hint) hint.hidden=open;
+    btn.setAttribute('aria-expanded',String(open));
+    btn.textContent=open?'Hide what happened':'Show what happened';
+    if(open && hasGsap && !reduceMotion) gsap.from(box.querySelectorAll('.ta-steps li'),{opacity:0,y:10,duration:.35,stagger:.12});
+  });
+});
 /* ---------- LESSON 6: quiz ---------- */
 const QUIZ=[
   {q:'A producer sends three events with key web01. What does Kafka guarantee?',
