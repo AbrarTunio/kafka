@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kafka, hands on: logs, partitions, consumer groups and KRaft</title>
+<meta name="description" content="Interactive simulations that show how Apache Kafka stores, partitions, replicates and serves events, and why KRaft replaced ZooKeeper.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📜</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2F4F6; --surface:#FFFFFF; --ink:#16202B; --muted:#58646F; --rule:#D3D9DF;
+  --signal:#0B6E69; --signal-soft:#DCEFEC; --danger:#B42318; --danger-soft:#FBE4E1; --ok:#2E7D32;
+  --k-web01:#1D4ED8; --k-db01:#C2410C; --k-fw01:#15803D; --k-vpn01:#7E22CE; --k-none:#64748B;
+  --bs-body-bg:var(--paper); --bs-body-color:var(--ink); --bs-border-color:var(--rule);
+  --bs-body-font-family:'Archivo',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --bs-link-color-rgb:11,110,105;
+}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{font-size:1.0625rem;line-height:1.55;font-variation-settings:"wdth" 100}
+h1,h2,h3{font-stretch:118%;font-weight:760;letter-spacing:-.01em;line-height:1.08}
+h1{font-size:clamp(2.2rem,5.2vw,4rem);max-width:15ch}
+h2{font-size:clamp(1.6rem,3vw,2.25rem);margin-bottom:.5rem}
+h3{font-size:1.15rem;font-stretch:108%;font-weight:700}
+p{max-width:68ch}
+.lead-text{font-size:1.2rem;color:var(--muted);max-width:56ch}
+.tnum{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+code{color:var(--ink);background:#E4E9EE;padding:.05em .3em;border-radius:3px;font-size:.88em}
+.btn code{background:transparent;padding:0;color:inherit}
+.btn{font-weight:600;border-radius:6px}
+.btn-ink{background:var(--ink);color:#fff;border:1px solid var(--ink)}
+.btn-ink:hover,.btn-ink:focus{background:#2A3744;color:#fff}
+.btn-line{background:var(--surface);color:var(--ink);border:1px solid var(--rule)}
+.btn-line:hover{border-color:var(--ink);color:var(--ink)}
+.btn-danger-line{background:var(--surface);color:var(--danger);border:1px solid #E7B4AE}
+.btn-danger-line:hover{background:var(--danger-soft);color:var(--danger)}
+.btn:focus-visible,.form-range:focus-visible,.form-select:focus-visible,.form-check-input:focus-visible{outline:3px solid var(--signal);outline-offset:2px;box-shadow:none}
+.btn-check:checked+.btn{color:#fff}
+.btn-check:checked+.btn-line{background:var(--ink);border-color:var(--ink);color:#fff}
+.form-range::-webkit-slider-thumb{background:var(--signal)}
+.form-range::-moz-range-thumb{background:var(--signal)}
+.form-check-input:checked{background-color:var(--signal);border-color:var(--signal)}
+
+/* nav */
+.topnav{background:rgba(242,244,246,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--rule)}
+.topnav .nav-link{color:var(--muted);font-weight:600;font-size:.95rem;padding:.35rem .6rem}
+.topnav .nav-link:hover{color:var(--ink)}
+.brand{font-weight:780;font-stretch:120%;color:var(--ink);text-decoration:none;font-size:1.05rem}
+
+/* the tape: offset cells used everywhere */
+.cell{flex:0 0 auto;width:44px;height:52px;border:1.5px solid var(--rule);background:var(--surface);
+  border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-variant-numeric:tabular-nums;position:relative}
+.cell .o{font-weight:700;font-size:1rem;line-height:1}
+.cell .k{font-size:.62rem;color:var(--muted);margin-top:3px;font-weight:600}
+.cell.keyed{border-left-width:5px}
+.cell.ghost{visibility:hidden}
+
+/* section marker: each lesson is an offset in the course's own log */
+.lesson-head{display:flex;gap:1rem;align-items:flex-start;margin-bottom:1rem}
+.lesson-head .cell{width:56px;height:64px;border-color:var(--ink);border-width:2px}
+.lesson-head .cell .o{font-size:1.5rem}
+.lesson-head .cell .k{color:var(--ink)}
+section.lesson{padding:4.5rem 0 3rem;border-top:1px solid var(--rule)}
+
+/* hero tape */
+.hero{padding:3.5rem 0 3rem}
+.hero-stage{position:relative;margin-top:2.5rem;padding:2.25rem 0 5rem}
+.hero-tape{display:flex;gap:6px;overflow:hidden;padding:0 2px}
+.hero-pointer{position:absolute;top:0;transform:translateX(-50%);font-size:.8rem;font-weight:700;
+  white-space:nowrap;transition:left .6s cubic-bezier(.4,0,.2,1)}
+.hero-pointer::after{content:"";display:block;width:2px;height:16px;background:currentColor;margin:3px auto 0}
+.hero-pointer.below{top:calc(2.25rem + 60px)}
+#heroSlow::before{height:34px}
+#heroWrite,#heroFast{transform:translateX(calc(-100% + 8px));text-align:right}
+#heroWrite::after{margin:3px 7px 0 auto}
+#heroFast::before{margin:0 7px 3px auto}
+.hero-stage{overflow:hidden}
+#heroSlow{transform:translateX(-8px);text-align:left}
+#heroSlow::before{margin:0 auto 3px 7px}
+@media (max-width: 767.98px){ .topnav .nav{flex-wrap:nowrap;overflow-x:auto;width:100%;scrollbar-width:none} .topnav .nav-link{white-space:nowrap} }
+.hero-pointer.below::after{display:none}
+.hero-pointer.below::before{content:"";display:block;width:2px;height:16px;background:currentColor;margin:0 auto 3px}
+.write-head{color:var(--ink)}
+
+/* panels */
+.panel{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:1.25rem}
+.panel-title{font-weight:700;font-size:.95rem;margin-bottom:.75rem}
+.note{border-left:3px solid var(--signal);background:var(--signal-soft);padding:.75rem 1rem;border-radius:0 8px 8px 0;max-width:72ch}
+
+/* sim 1 */
+.key-btn{min-width:84px}
+.key-swatch{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:baseline}
+.partition-row{display:grid;grid-template-columns:72px 1fr;gap:.75rem;align-items:center;padding:.5rem 0;border-bottom:1px dashed var(--rule)}
+.partition-row:last-child{border-bottom:0}
+.p-label{font-weight:750;font-stretch:115%}
+.p-label small{display:block;font-weight:500;color:var(--muted);font-size:.75rem;font-stretch:100%}
+.tape{display:flex;gap:5px;overflow-x:auto;padding:4px 2px 8px;min-height:66px;scrollbar-width:thin}
+.tape-empty{color:var(--muted);font-size:.9rem;align-self:center}
+#producer1{position:relative}
+
+/* sim 2 */
+.track-row{display:grid;grid-template-columns:72px 1fr 230px;gap:1rem;align-items:center;padding:.6rem 0;border-bottom:1px dashed var(--rule)}
+.track-row:last-child{border-bottom:0}
+.track{position:relative;height:30px;background:repeating-linear-gradient(90deg,#E9EDF1 0 2px,transparent 2px 10px),#F7F9FA;border:1px solid var(--rule);border-radius:4px}
+.track .fill{position:absolute;inset:0 auto 0 0;background:#E3E8ED;border-radius:3px 0 0 3px;width:100%}
+.marker{position:absolute;top:-7px;bottom:-7px;width:3px;border-radius:2px;transform:translateX(-1.5px);transition:left .35s ease}
+.marker span{position:absolute;top:-17px;left:50%;transform:translateX(-50%);font-size:.68rem;font-weight:700;white-space:nowrap}
+.marker.a{background:var(--signal)} .marker.a span{color:var(--signal)}
+.marker.b{background:var(--k-vpn01)} .marker.b span{color:var(--k-vpn01);top:auto;bottom:-17px}
+.lagbox{font-size:.85rem;font-variant-numeric:tabular-nums;line-height:1.35}
+.lagbox b{font-weight:700}
+.consumer{border:1.5px solid var(--rule);border-radius:8px;padding:.6rem .7rem;background:var(--surface);min-height:92px;position:relative;transition:border-color .2s}
+.consumer.active{border-color:var(--signal)}
+.consumer.idle{border-style:dashed;background:#F7F8FA;color:var(--muted)}
+.consumer.groupb{border-color:var(--k-vpn01)}
+.consumer .name{font-weight:700;font-size:.92rem}
+.consumer .count{font-size:.8rem;color:var(--muted)}
+.chip{display:inline-block;padding:1px 7px;border-radius:4px;background:var(--ink);color:#fff;font-size:.75rem;font-weight:700;margin:4px 4px 0 0}
+.consumer.groupb .chip{background:var(--k-vpn01)}
+.rebalancing::after{content:"Rebalancing";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.88);font-weight:700;color:var(--signal);border-radius:7px}
+
+/* sim 3 */
+.broker{border:1.5px solid var(--rule);border-radius:10px;padding:.9rem;background:var(--surface);height:100%}
+.broker.down{background:repeating-linear-gradient(-45deg,#FBEDEB 0 8px,#fff 8px 16px);border-color:#E7B4AE}
+.broker-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem}
+.broker-head b{font-stretch:115%}
+.status{font-size:.78rem;font-weight:700}
+.status.up{color:var(--ok)} .status.dn{color:var(--danger)}
+.replica{display:grid;grid-template-columns:auto 1fr auto;gap:.5rem;align-items:center;border:1px solid var(--rule);border-radius:6px;padding:.45rem .6rem;margin-bottom:.45rem;background:#fff}
+.replica .rp{font-weight:750}
+.replica .role{font-size:.8rem;color:var(--muted)}
+.replica.leader{border-color:var(--ink);box-shadow:inset 3px 0 0 var(--ink)}
+.replica.leader .role{color:var(--ink);font-weight:700}
+.replica.lagging .role{color:var(--danger);font-weight:600}
+.replica.off{opacity:.5}
+.replica .n{font-variant-numeric:tabular-nums;font-weight:700}
+.eventlog{list-style:none;padding:0;margin:0;font-size:.9rem;max-height:210px;overflow:auto}
+.eventlog li{padding:.4rem 0;border-bottom:1px dashed var(--rule)}
+.eventlog li.bad{color:var(--danger)} .eventlog li.good{color:var(--ok)}
+.eventlog time{color:var(--muted);font-variant-numeric:tabular-nums;margin-right:.5rem;font-size:.8rem}
+
+/* sim 4 */
+.arch{border:1.5px solid var(--rule);border-radius:12px;padding:1.1rem;background:var(--surface);height:100%;display:flex;flex-direction:column}
+.arch h3{margin-bottom:.15rem}
+.tier-label{font-size:.8rem;font-weight:700;color:var(--muted);margin:.85rem 0 .35rem}
+.nodes{display:flex;gap:.5rem;flex-wrap:wrap}
+.node{flex:1 1 0;min-width:84px;border:1.5px solid var(--rule);border-radius:8px;padding:.5rem;text-align:center;font-size:.85rem;font-weight:600;background:#fff;position:relative;transition:background .3s,border-color .3s}
+.node small{display:block;font-weight:500;color:var(--muted);font-size:.72rem}
+.node.zk{border-color:#B9A26A;background:#FBF6E9}
+.node.ctrl{border-color:var(--signal)}
+.node.active-ctrl{background:var(--signal-soft);border-color:var(--signal);box-shadow:0 0 0 2px var(--signal) inset}
+.node.dead{background:var(--danger-soft);border-color:var(--danger);color:var(--danger)}
+.node .badge-ctrl{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--signal);color:#fff;font-size:.65rem;font-weight:700;padding:1px 6px;border-radius:4px;white-space:nowrap}
+.mini-log{display:flex;gap:2px;justify-content:center;margin-top:5px;min-height:14px}
+.mini-log i{display:block;width:9px;height:12px;border-radius:2px;background:var(--signal);opacity:.75}
+.stat-grid{display:grid;grid-template-columns:1fr auto;gap:.2rem .75rem;font-size:.92rem;margin-top:auto;padding-top:1rem;border-top:1px dashed var(--rule)}
+.stat-grid dd{margin:0;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.stopwatch{font-size:2rem;font-weight:780;font-stretch:120%;font-variant-numeric:tabular-nums;line-height:1}
+.steps{list-style:none;padding:0;margin:.5rem 0 0;font-size:.9rem}
+.steps li{padding:.25rem 0 .25rem 1.4rem;position:relative;color:var(--muted)}
+.steps li::before{content:"";position:absolute;left:0;top:.55rem;width:10px;height:10px;border-radius:50%;border:2px solid var(--rule)}
+.steps li.doing{color:var(--ink);font-weight:600}
+.steps li.doing::before{border-color:var(--signal);background:var(--signal-soft)}
+.steps li.done{color:var(--ink)}
+.steps li.done::before{border-color:var(--ok);background:var(--ok)}
+.progress{height:8px;background:#E7EBEF}
+.progress-bar{background:var(--signal);transition:none}
+
+/* quiz */
+.q{margin-bottom:1.5rem}
+.q .opt{display:block;width:100%;text-align:left;margin-bottom:.4rem;font-weight:500}
+.q .opt.right{border-color:var(--ok);background:#E5F2E6;color:var(--ink)}
+.q .opt.wrong{border-color:var(--danger);background:var(--danger-soft);color:var(--ink)}
+.q .why{font-size:.95rem;margin-top:.35rem}
+
+/* flying events */
+#flight{position:fixed;inset:0;pointer-events:none;z-index:2000}
+.dot{position:absolute;left:0;top:0;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.dot.ack{border-radius:50%;width:10px;height:10px;margin:-5px 0 0 -5px;background:var(--ok)}
+
+
+/* basics */
+.sysmap{display:grid;grid-template-columns:1fr 56px 1.7fr 56px 1fr;align-items:stretch;gap:0}
+.sys-col,.sys-cluster{display:flex;flex-direction:column;gap:.45rem}
+.sys-label{font-weight:750;font-stretch:112%;margin-bottom:.15rem}
+.sys-app{border:1.5px solid var(--rule);border-radius:7px;padding:.45rem .6rem;font-weight:600;font-size:.92rem;background:#fff}
+.sys-app small{display:block;font-weight:500;color:var(--muted);font-size:.75rem}
+.sys-note{font-size:.8rem;color:var(--muted);margin-top:auto}
+.sys-arrow{display:flex;align-items:center;justify-content:center;position:relative}
+.sys-arrow::before{content:"";position:absolute;left:8px;right:12px;top:50%;height:2px;background:var(--ink)}
+.sys-arrow::after{content:"";position:absolute;right:6px;top:50%;margin-top:-6px;border:6px solid transparent;border-left:9px solid var(--ink);border-right:0}
+.sys-arrow span{position:relative;background:var(--surface);font-size:.75rem;font-weight:700;padding:0 4px;margin-top:-28px}
+.sys-cluster{border:2px solid var(--ink);border-radius:12px;padding:.8rem}
+.sys-ctrl{background:var(--signal-soft);border:1.5px solid var(--signal);border-radius:7px;padding:.4rem .6rem;font-size:.85rem;font-weight:600}
+.sys-brokers{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
+.sys-broker{border:1.5px solid var(--rule);border-radius:7px;padding:.5rem;background:#fff;display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.sys-broker b{width:100%;font-size:.88rem}
+.rchip{font-size:.72rem;font-weight:700;padding:1px 6px;border-radius:4px;border:1.5px solid var(--ink);color:var(--ink);background:#fff}
+.rchip.lead{background:var(--ink);color:#fff}
+.glossary{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:.9rem 1.5rem;margin:0}
+.glossary>div{border-top:2px solid var(--ink);padding-top:.5rem}
+.glossary dt{font-weight:750;font-stretch:110%;margin-bottom:.2rem}
+.glossary dd{margin:0;font-size:.95rem}
+.glossary a{font-weight:600;white-space:nowrap}
+.proc-table{--bs-table-bg:transparent;font-size:.93rem}
+.proc-table th{font-weight:700;border-bottom:2px solid var(--ink)}
+.proc-table tr.retired td{color:var(--muted);text-decoration:line-through;text-decoration-color:rgba(88,100,111,.5)}
+.proc-table tr.retired td:last-child{text-decoration:none}
+.journey{padding-left:1.4rem;margin:0}
+.journey li{padding:.3rem 0 .3rem .3rem}
+.journey li::marker{font-weight:800;color:var(--signal)}
+@media (max-width: 991.98px){
+  .sysmap{grid-template-columns:1fr;gap:0}
+  .sys-arrow{height:44px}
+  .sys-arrow::before{left:50%;right:auto;top:6px;bottom:12px;width:2px;height:auto}
+  .sys-arrow::after{left:50%;right:auto;top:auto;bottom:4px;margin:0 0 0 -6px;border:6px solid transparent;border-top:9px solid var(--ink);border-bottom:0}
+  .sys-arrow span{margin:0 0 0 70px;background:transparent}
+}
+/* flume */
+.glossary-tight{grid-template-columns:1fr;gap:.6rem}
+.conf{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:.85rem 1rem;font-size:.82rem;line-height:1.55;white-space:pre;overflow-x:auto;margin-bottom:.6rem}
+.conf>span{display:block;border-left:4px solid;padding-left:.6rem;margin:.1rem 0 .45rem -.4rem}
+.cf-agent{border-color:var(--rule)!important;color:var(--muted)}
+.cf-src{border-color:var(--k-web01)!important}
+.cf-ch{border-color:var(--signal)!important}
+.cf-sink{border-color:var(--k-db01)!important}
+.flume-flow{display:grid;grid-template-columns:1fr 3.2fr 1fr;gap:.75rem;align-items:stretch}
+.fl-agent{border:2px dashed var(--ink);border-radius:12px;padding:.6rem .7rem .75rem;transition:background .3s,border-color .3s}
+.fl-agent.crashed{background:repeating-linear-gradient(-45deg,#FBEDEB 0 8px,transparent 8px 16px);border-color:var(--danger)}
+.fl-agent-label{font-size:.85rem;font-weight:700;margin-bottom:.5rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+.fl-state{font-size:.75rem;padding:1px 7px;border-radius:4px;background:var(--ok);color:#fff}
+.fl-state.dn{background:var(--danger)}
+.fl-agent-inner{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem}
+.fl-box{background:var(--surface);border:1.5px solid var(--rule);border-radius:9px;padding:.6rem;display:flex;flex-direction:column;min-height:190px}
+#flSrcBox{border-top:4px solid var(--k-web01)} #flChBox{border-top:4px solid var(--signal)} #flSinkBox{border-top:4px solid var(--k-db01)}
+#flChBox.ram-wiped{background:var(--danger-soft)} #flChBox.on-disk{background:var(--signal-soft)}
+.fl-head{font-weight:750;font-size:.92rem}
+.fl-head small{display:block;font-weight:500;color:var(--muted);font-size:.74rem}
+.fl-cells{display:flex;flex-wrap:wrap;gap:3px;align-content:flex-start;margin:.5rem 0;flex:1}
+.fl-meta{font-size:.78rem;color:var(--muted)}
+.sq{width:14px;height:14px;border-radius:2px;border:1.5px solid var(--rule);background:#fff;flex:0 0 auto}
+.sq.read{background:#DCE7FB;border-color:var(--k-web01)}
+.sq.chan{background:var(--signal-soft);border-color:var(--signal)}
+.sq.sent{background:var(--ok);border-color:var(--ok)}
+.sq.lost{background:var(--danger);border-color:var(--danger)}
+.sq.dup{background:#F2C14E;border-color:#B7861A}
+.fl-legend{display:flex;flex-wrap:wrap;gap:.35rem 1rem;font-size:.8rem;color:var(--muted)}
+.fl-legend .lg{display:inline-block;width:11px;height:11px;border-radius:2px;border:1.5px solid var(--rule);margin-right:5px;vertical-align:-1px;background:#fff}
+.lg.read{background:#DCE7FB;border-color:var(--k-web01)} .lg.chan{background:var(--signal-soft);border-color:var(--signal)}
+.lg.sent{background:var(--ok);border-color:var(--ok)} .lg.dup{background:#F2C14E;border-color:#B7861A} .lg.lost{background:var(--danger);border-color:var(--danger)}
+.sf-grid{display:grid;grid-template-columns:repeat(40,1fr);gap:2px;min-height:40px}
+.sf-grid i{display:block;aspect-ratio:1;background:var(--k-db01);border-radius:1px}
+.sf-grid i.big{grid-column:1 / span 8;grid-row:span 2;aspect-ratio:auto;background:var(--signal);border-radius:3px}
+.bridge{display:flex;flex-direction:column;align-items:stretch}
+.br-node{border:1.5px solid var(--rule);border-radius:8px;padding:.5rem .7rem;background:var(--surface);font-size:.92rem;font-weight:600}
+.br-flume{border-color:var(--k-db01)} .br-kafka{border-color:var(--ink);border-width:2px}
+.br-arrow{font-size:.78rem;color:var(--muted);padding:.2rem 0 .2rem 1.1rem;position:relative}
+.br-arrow::before{content:"";position:absolute;left:.45rem;top:0;bottom:0;width:2px;background:var(--ink)}
+@media (max-width: 991.98px){
+  .flume-flow{grid-template-columns:1fr}
+  .fl-agent-inner{grid-template-columns:1fr}
+  .fl-box{min-height:0}
+}
+footer{border-top:1px solid var(--rule);padding:2rem 0 3rem;color:var(--muted);font-size:.9rem}
+
+@media (max-width: 767.98px){
+  .track-row{grid-template-columns:56px 1fr}
+  .track-row .lagbox{grid-column:2}
+  .partition-row{grid-template-columns:56px 1fr}
+}
+@media (max-width: 575.98px){ .lesson-head{flex-direction:column;gap:.6rem} }
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  .hero-pointer,.marker{transition:none}
+}
+</style>
+</head>
+<body>
+<div id="flight" aria-hidden="true"></div>
+
+<nav class="topnav sticky-top">
+  <div class="container d-flex flex-wrap align-items-center justify-content-between py-2 gap-2">
+    <a class="brand" href="#top">Kafka, hands on</a>
+    <div class="nav">
+      <a class="nav-link" href="#basics">Kafka basics</a>
+      <a class="nav-link" href="#log">The log</a>
+      <a class="nav-link" href="#groups">Consumer groups</a>
+      <a class="nav-link" href="#replication">Replication</a>
+      <a class="nav-link" href="#kraft">ZooKeeper vs KRaft</a>
+      <a class="nav-link" href="#flume">Flume</a>
+      <a class="nav-link" href="#check">Check yourself</a>
+    </div>
+  </div>
+</nav>
+
+<main id="top">
+<!-- HERO -->
+<header class="hero">
+  <div class="container">
+    <h1>Kafka keeps a log, and anyone can read it.</h1>
+    <p class="lead-text mt-3">Producers append events to the end. Each reader keeps its own bookmark. Reading never deletes anything, so a slow reader, a new reader and a reader replaying last week all work from the same data.</p>
+    <div class="hero-stage" id="heroStage">
+      <div class="hero-pointer write-head" id="heroWrite">producer appends here</div>
+      <div class="hero-tape" id="heroTape"></div>
+      <div class="hero-pointer below" id="heroFast" style="color:var(--signal)">alerting app, almost caught up</div>
+      <div class="hero-pointer below" id="heroSlow" style="color:var(--k-vpn01)">archive job, far behind</div>
+    </div>
+    <p class="muted small mb-0">Every box is one event. The number inside is its <strong>offset</strong>: its permanent position in the log.</p>
+  </div>
+</header>
+
+<!-- LESSON 0: KAFKA BASICS -->
+<section class="lesson" id="basics">
+  <div class="container">
+    <div class="lesson-head">
+      <div class="cell"><span class="o">0</span><span class="k">offset</span></div>
+      <div>
+        <h2>What Kafka is, and the parts it is made of</h2>
+        <p class="mb-0">Apache Kafka is a <strong>distributed event log</strong>. Applications write events into it, Kafka stores them durably across several servers, and any number of other applications read them, each at its own pace. It sits in the middle of a system so that the apps producing data and the apps using it never have to connect to each other directly.</p>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-lg-6">
+        <h3>The problem it solves</h3>
+        <p>A security team has web servers, firewalls and VPN gateways producing logs, and an alerting system, an HDFS archive and a dashboard that need them. Connected directly, that is 3 × 3 = 9 separate pipelines, each with its own format, retries and failure handling. Add one new source and you build three more.</p>
+        <p class="mb-0">With Kafka in the middle, each source writes once and each consumer reads once: 3 + 3 = 6 connections. A new consumer simply starts reading, even from data written last week, without anyone changing the producers.</p>
+      </div>
+      <div class="col-lg-6">
+        <h3>What makes it different from a queue</h3>
+        <p class="mb-0">In a classic message queue (or a Flume channel), a message disappears once it is delivered. Kafka keeps every event for a configured <strong>retention</strong> period, 7 days by default, whether or not anyone has read it. Reading only moves the reader's bookmark. That one design choice is what allows replay, many independent readers, and recovery after a consumer crashes.</p>
+      </div>
+    </div>
+
+    <!-- system diagram -->
+    <div class="panel mb-4">
+      <div class="panel-title">The whole system in one picture</div>
+      <div class="sysmap">
+        <div class="sys-col">
+          <div class="sys-label">Producers</div>
+          <div class="sys-app"><span class="key-swatch" style="background:var(--k-web01)"></span>Web servers</div>
+          <div class="sys-app"><span class="key-swatch" style="background:var(--k-fw01)"></span>Firewall</div>
+          <div class="sys-app"><span class="key-swatch" style="background:var(--k-vpn01)"></span>VPN gateway</div>
+          <div class="sys-note">Client apps that write events</div>
+        </div>
+        <div class="sys-arrow" aria-hidden="true"><span>write</span></div>
+        <div class="sys-cluster">
+          <div class="sys-label">Kafka cluster</div>
+          <div class="sys-ctrl">Controllers keep the cluster metadata: live brokers, topics, partition leaders</div>
+          <div class="sys-brokers">
+            <div class="sys-broker"><b>Broker 1</b><span class="rchip lead">P0</span><span class="rchip">P1</span><span class="rchip">P2</span></div>
+            <div class="sys-broker"><b>Broker 2</b><span class="rchip">P0</span><span class="rchip lead">P1</span><span class="rchip">P2</span></div>
+            <div class="sys-broker"><b>Broker 3</b><span class="rchip">P0</span><span class="rchip">P1</span><span class="rchip lead">P2</span></div>
+          </div>
+          <div class="sys-note">Topic <code>security-events</code>: 3 partitions, each stored on 3 brokers. Dark copy = leader.</div>
+        </div>
+        <div class="sys-arrow" aria-hidden="true"><span>read</span></div>
+        <div class="sys-col">
+          <div class="sys-label">Consumer groups</div>
+          <div class="sys-app">Alerting <small>group <code>alerting</code></small></div>
+          <div class="sys-app">HDFS archive <small>group <code>archive</code></small></div>
+          <div class="sys-app">Dashboard <small>group <code>dashboard</code></small></div>
+          <div class="sys-note">Each group reads every event</div>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="mb-3">The vocabulary</h3>
+    <dl class="glossary mb-4">
+      <div><dt>Event (record)</dt><dd>One fact that happened, such as "login failed on web01". It has an optional <strong>key</strong>, a <strong>value</strong> and a timestamp.</dd></div>
+      <div><dt>Topic</dt><dd>A named stream of related events, like a table name for data in motion: <code>security-events</code>, <code>payments</code>.</dd></div>
+      <div><dt>Partition</dt><dd>A topic is split into partitions, and each is an ordered, append-only log. Partitions let a topic spread across brokers and be read in parallel. <a href="#log">See it in section 1</a></dd></div>
+      <div><dt>Offset</dt><dd>An event's position number within its partition: 0, 1, 2 and so on. It never changes, and it is how readers keep their place.</dd></div>
+      <div><dt>Producer</dt><dd>Any application that writes events to a topic. The key it chooses decides which partition each event goes to.</dd></div>
+      <div><dt>Consumer</dt><dd>Any application that reads events, starting from an offset and moving forward.</dd></div>
+      <div><dt>Consumer group</dt><dd>Consumers sharing one name split a topic's partitions between them, so each event is handled once per group. Different groups each get everything. <a href="#groups">See it in section 2</a></dd></div>
+      <div><dt>Broker</dt><dd>One Kafka server. It stores partitions on its disk and handles reads and writes for them.</dd></div>
+      <div><dt>Cluster</dt><dd>Several brokers working together, so data survives a server failure and load is shared.</dd></div>
+      <div><dt>Replica, leader, follower</dt><dd>Each partition is copied to several brokers. The <strong>leader</strong> copy takes all writes; <strong>followers</strong> copy it. Fully caught-up copies form the <strong>ISR</strong>. <a href="#replication">See it in section 3</a></dd></div>
+      <div><dt>Controller</dt><dd>The part of the cluster that manages metadata: it notices dead brokers and chooses new partition leaders. <a href="#kraft">See it in section 4</a></dd></div>
+      <div><dt>Retention</dt><dd>How long events are kept, by time (<code>log.retention.hours=168</code>, 7 days) or by size. Old data is deleted whole files at a time, not per read.</dd></div>
+    </dl>
+
+    <div class="row g-4">
+      <div class="col-lg-7">
+        <h3 class="mb-3">The processes Kafka needs</h3>
+        <div class="table-responsive">
+          <table class="table proc-table align-top mb-2">
+            <thead><tr><th>Process</th><th>Its job</th><th>In your lab</th></tr></thead>
+            <tbody>
+              <tr><td><b>Broker</b></td><td>Stores partitions on disk, accepts writes, serves reads, copies data to other brokers</td><td><code>kafka-server-start.sh</code>, port 9092</td></tr>
+              <tr><td><b>Controller</b></td><td>Keeps cluster metadata, detects failed brokers, elects partition leaders</td><td>Same process as the broker (<code>process.roles=broker,controller</code>), port 9093</td></tr>
+              <tr><td><b>Producer</b></td><td>Client application that writes events; not part of the cluster</td><td><code>kafka-console-producer.sh</code>, Flume's Kafka sink</td></tr>
+              <tr><td><b>Consumer</b></td><td>Client application that reads events; not part of the cluster</td><td><code>kafka-console-consumer.sh</code></td></tr>
+              <tr class="retired"><td><b>ZooKeeper</b></td><td>Separate system that used to hold the metadata</td><td>Not needed with KRaft; removed in Kafka 4.0</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="small muted mb-0">In production the roles are usually split: 3 dedicated controllers plus 3 or more brokers. In the lab, one process plays both roles so you only start one thing. <code>kafka-topics.sh</code>, <code>kafka-consumer-groups.sh</code> and <code>kafka-storage.sh</code> are admin tools that run and exit; they are not part of the running system.</p>
+      </div>
+      <div class="col-lg-5">
+        <h3 class="mb-3">How one event travels</h3>
+        <ol class="journey">
+          <li>The producer hashes the event's key to pick a partition.</li>
+          <li>It sends the event to the broker that leads that partition.</li>
+          <li>The leader appends it to the end of the partition log, giving it the next offset.</li>
+          <li>Follower brokers copy it. With <code>acks=all</code>, the producer is told "stored" only once every in-sync copy has it.</li>
+          <li>Consumers fetch from their last offset, process the event, and commit their new offset.</li>
+          <li>When retention expires, the old log file containing it is deleted.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LESSON 1: THE LOG -->
+<section class="lesson" id="log">
+  <div class="container">
+    <div class="lesson-head">
+      <div class="cell"><span class="o">1</span><span class="k">offset</span></div>
+      <div>
+        <h2>Topics, partitions and keys</h2>
+        <p class="mb-0">A <strong>topic</strong> is a named stream, here <code>security-events</code>. It is split into <strong>partitions</strong> so several machines can share the work. The message <strong>key</strong> decides the partition: the same key always lands in the same partition, which is how Kafka keeps events for one host in order.</p>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-lg-4">
+        <div class="panel h-100" id="producer1">
+          <div class="panel-title">Producer</div>
+          <div class="mb-2 small muted">Choose the key (the host that produced the event)</div>
+          <div class="d-flex flex-wrap gap-2 mb-3" role="radiogroup" aria-label="Message key" id="keyGroup"></div>
+          <label class="small muted mb-1" for="eventText">Event</label>
+          <select class="form-select mb-3" id="eventText">
+            <option>login failed</option>
+            <option>login failed again</option>
+            <option>account locked</option>
+            <option>port scan detected</option>
+            <option>firewall rule changed</option>
+          </select>
+          <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-ink" id="sendOne">Send event</button>
+            <button class="btn btn-line" id="sendTen">Send 10 random</button>
+            <button class="btn btn-line" id="clearTopic">Clear topic</button>
+          </div>
+          <p class="small muted mt-3 mb-0" id="routeHint">Choose a key to see which partition it maps to.</p>
+        </div>
+      </div>
+      <div class="col-lg-8">
+        <div class="panel h-100">
+          <div class="d-flex justify-content-between align-items-baseline flex-wrap gap-2">
+            <div class="panel-title mb-0">Topic <code>security-events</code>, 3 partitions</div>
+            <div class="small muted">Hover a box to see the event</div>
+          </div>
+          <div id="partitions1" class="mt-2"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note mt-3">
+      <strong>Try this.</strong> Send <code>web01</code> three times with different events, then <code>db01</code>. Both keys hash to partition 1, and their events stay in the order you sent them. Now send <code>fw01</code>: it goes to partition 0. Order is guaranteed <em>within</em> a partition, never across the whole topic. Events with no key are spread across partitions, so they have no ordering guarantee at all.
+    </div>
+  </div>
+</section>
+
+<!-- LESSON 1: CONSUMER GROUPS -->
+<section class="lesson" id="groups">
+  <div class="container">
+    <div class="lesson-head">
+      <div class="cell"><span class="o">2</span><span class="k">offset</span></div>
+      <div>
+        <h2>Consumer groups and lag</h2>
+        <p class="mb-0">Consumers in one <strong>group</strong> split the partitions between them, so each event is processed once per group. A consumer reads by moving its <strong>committed offset</strong> forward. <strong>Lag</strong> is how far that bookmark is behind the end of the log. A second application in a different group gets its own bookmarks and reads everything again.</p>
+      </div>
+    </div>
+
+    <div class="panel mb-3">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label for="consumerCount" class="form-label fw-semibold mb-1">Consumers in <code>alerting</code> group: <span id="consumerCountVal" class="tnum">1</span></label>
+          <input type="range" class="form-range" min="1" max="5" value="1" id="consumerCount">
+        </div>
+        <div class="col-md-8 d-flex flex-wrap gap-3 align-items-center">
+          <div class="form-check form-switch m-0">
+            <input class="form-check-input" type="checkbox" role="switch" id="autoProduce">
+            <label class="form-check-label" for="autoProduce">Producers sending (about 2 events per second)</label>
+          </div>
+          <div class="form-check form-switch m-0">
+            <input class="form-check-input" type="checkbox" role="switch" id="runConsumers">
+            <label class="form-check-label" for="runConsumers">Consumers running</label>
+          </div>
+          <div class="form-check form-switch m-0">
+            <input class="form-check-input" type="checkbox" role="switch" id="groupB">
+            <label class="form-check-label" for="groupB">Add <code>archive</code> group</label>
+          </div>
+          <button class="btn btn-line btn-sm" id="replayB" disabled>Replay <code>archive</code> from offset 0</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-lg-7">
+        <div class="panel h-100">
+          <div class="panel-title">Partitions and bookmarks</div>
+          <div id="tracks"></div>
+          <p class="small muted mt-2 mb-0">The grey bar is the log. Markers show where each group has read up to. Nothing is removed when a group reads.</p>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="panel h-100">
+          <div class="panel-title">Group <code>alerting</code></div>
+          <div class="row g-2" id="consumersA"></div>
+          <div id="groupBWrap" class="d-none">
+            <div class="panel-title mt-3">Group <code>archive</code></div>
+            <div class="row g-2"><div class="col-12"><div class="consumer groupb" id="consumerB"><div class="name">archive-1</div><div class="count tnum">read 0</div><div><span class="chip">P0</span><span class="chip">P1</span><span class="chip">P2</span></div></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note mt-3">
+      <strong>Try this.</strong> Turn on producers and consumers with one consumer, and watch lag grow. Slide to 3 consumers: the group rebalances and lag falls. Slide to 5: two consumers sit idle, because a partition goes to only one consumer in a group. <strong>Partition count is the ceiling on parallelism.</strong> Then add the <code>archive</code> group and replay it from 0. In a Flume channel an event is gone once the sink takes it. In Kafka, reading only moves a bookmark.
+    </div>
+  </div>
+</section>
+
+<!-- LESSON 2: REPLICATION -->
+<section class="lesson" id="replication">
+  <div class="container">
+    <div class="lesson-head">
+      <div class="cell"><span class="o">3</span><span class="k">offset</span></div>
+      <div>
+        <h2>Replication, leaders and <code>acks=all</code></h2>
+        <p class="mb-0">Each partition is copied to several brokers. One copy is the <strong>leader</strong> and takes all writes. The others are <strong>followers</strong> that copy the leader. Followers that are fully caught up form the <strong>in-sync replica set (ISR)</strong>. If a leader's broker dies, an in-sync follower takes over, and no acknowledged event is lost.</p>
+      </div>
+    </div>
+
+    <div class="panel mb-3">
+      <div class="row g-3 align-items-end">
+        <div class="col-sm-4 col-md-3">
+          <label class="form-label small muted mb-1" for="repPartition">Write to</label>
+          <select class="form-select" id="repPartition"><option value="0">Partition 0</option><option value="1">Partition 1</option><option value="2">Partition 2</option></select>
+        </div>
+        <div class="col-sm-4 col-md-3">
+          <label class="form-label small muted mb-1" for="repAcks">Producer setting</label>
+          <select class="form-select" id="repAcks"><option value="all">acks=all</option><option value="1">acks=1</option></select>
+        </div>
+        <div class="col-sm-4 col-md-6 d-flex gap-2 flex-wrap align-items-center">
+          <button class="btn btn-ink" id="repWrite">Write event</button>
+          <button class="btn btn-line" id="repReset">Reset cluster</button>
+          <span class="small muted">Replication factor 3, <code>min.insync.replicas=2</code></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-lg-2 col-md-12">
+        <div class="panel h-100 d-flex flex-lg-column gap-2 align-items-center justify-content-center text-center" id="repProducer">
+          <div class="fw-bold">Producer</div>
+          <div class="small muted" id="repProducerState">ready</div>
+        </div>
+      </div>
+      <div class="col-lg-10">
+        <div class="row g-3" id="brokers"></div>
+      </div>
+    </div>
+
+    <div class="row g-3 mt-0">
+      <div class="col-lg-7">
+        <div class="note h-100">
+          <strong>Try this.</strong> Write a few events to partition 0 with <code>acks=all</code>: the acknowledgement returns only after every in-sync copy has it. Kill broker 1: partition 0's leader moves to an in-sync follower. Kill broker 2 as well: only one copy is left, so <code>acks=all</code> writes are refused rather than risking loss. Switch to <code>acks=1</code> and the write succeeds, but it now lives on one disk. Restart the brokers and watch them catch up and rejoin the ISR.
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="panel h-100">
+          <div class="panel-title">What happened</div>
+          <ul class="eventlog" id="repLog" aria-live="polite"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LESSON 3: ZOOKEEPER VS KRAFT -->
+<section class="lesson" id="kraft">
+  <div class="container">
+    <div class="lesson-head">
+      <div class="cell"><span class="o">4</span><span class="k">offset</span></div>
+      <div>
+        <h2>Who keeps the cluster's own records?</h2>
+        <p class="mb-0">Someone must remember which brokers are alive, which topics exist and who leads each partition. That is <strong>cluster metadata</strong>, and it is managed by one <strong>controller</strong>. For years Kafka stored it in a separate system, <strong>ZooKeeper</strong>. With <strong>KRaft</strong> (Kafka + Raft), Kafka stores it in its own replicated log, and Kafka 4.0 removed ZooKeeper entirely.</p>
+      </div>
+    </div>
+
+    <div class="panel mb-3">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label small muted mb-1" for="partCount">Partitions in the cluster</label>
+          <select class="form-select" id="partCount">
+            <option value="1000">1,000</option>
+            <option value="20000">20,000</option>
+            <option value="100000" selected>100,000</option>
+            <option value="200000">200,000</option>
+          </select>
+        </div>
+        <div class="col-md-8 d-flex gap-2 flex-wrap">
+          <button class="btn btn-ink" id="raceBoth">Fail both controllers at once</button>
+          <button class="btn btn-line" id="resetArch">Reset</button>
+        </div>
+      </div>
+      <p class="small muted mt-2 mb-0">Time is compressed for the classroom. The comparison is the point: with ZooKeeper, recovery grows with the amount of metadata; with KRaft, it does not.</p>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-lg-6">
+        <div class="arch" id="zkArch">
+          <h3>Kafka with ZooKeeper</h3>
+          <p class="small muted mb-0">Two different systems. The controller is an ordinary broker that keeps metadata in ZooKeeper.</p>
+          <div class="tier-label">ZooKeeper ensemble: stores the metadata</div>
+          <div class="nodes"><div class="node zk">zk-1</div><div class="node zk">zk-2</div><div class="node zk">zk-3</div></div>
+          <div class="tier-label">Kafka brokers: store your data</div>
+          <div class="nodes" id="zkBrokers"></div>
+          <div class="d-flex align-items-end justify-content-between mt-3 gap-2 flex-wrap">
+            <div><div class="small muted">Metadata unavailable for</div><div class="stopwatch" id="zkClock">0.0 s</div></div>
+            <button class="btn btn-danger-line" id="zkFail">Fail the controller</button>
+          </div>
+          <ol class="steps" id="zkSteps">
+            <li>ZooKeeper notices the controller's session has gone</li>
+            <li>Brokers race to become controller through ZooKeeper</li>
+            <li>New controller reads all metadata back from ZooKeeper</li>
+            <li>New leaders sent to every broker</li>
+          </ol>
+          <div class="progress mt-1" role="progressbar" aria-label="Metadata loaded" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" id="zkBar" style="width:0%"></div></div>
+          <div class="small muted mt-1 tnum" id="zkLoadText">&nbsp;</div>
+          <dl class="stat-grid">
+            <dt>Systems to install, secure and monitor</dt><dd>2</dd>
+            <dt>Partitions without a leader right now</dt><dd id="zkOffline">0</dd>
+            <dt>Practical partition limit</dt><dd>about 200,000</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="arch" id="krArch">
+          <h3>Kafka with KRaft</h3>
+          <p class="small muted mb-0">One system. A small quorum of controllers keeps metadata as a Kafka log, replicated with the Raft protocol.</p>
+          <div class="tier-label">Controller quorum: each holds the metadata log <code>__cluster_metadata</code></div>
+          <div class="nodes" id="krCtrls"></div>
+          <div class="tier-label">Kafka brokers: store your data, follow the metadata log</div>
+          <div class="nodes"><div class="node">broker 1</div><div class="node">broker 2</div><div class="node">broker 3</div></div>
+          <div class="d-flex align-items-end justify-content-between mt-3 gap-2 flex-wrap">
+            <div><div class="small muted">Metadata unavailable for</div><div class="stopwatch" id="krClock">0.0 s</div></div>
+            <button class="btn btn-danger-line" id="krFail">Fail the active controller</button>
+          </div>
+          <ol class="steps" id="krSteps">
+            <li>Standby controllers notice the active one is gone</li>
+            <li>Raft vote: the most up-to-date standby wins</li>
+            <li>New controller already has the full log in memory</li>
+            <li>Brokers keep serving data throughout</li>
+          </ol>
+          <div class="progress mt-1" role="progressbar" aria-label="Metadata loaded" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" id="krBar" style="width:0%"></div></div>
+          <div class="small muted mt-1 tnum" id="krLoadText">&nbsp;</div>
+          <dl class="stat-grid">
+            <dt>Systems to install, secure and monitor</dt><dd>1</dd>
+            <dt>Partitions without a leader right now</dt><dd id="krOffline">0</dd>
+            <dt>Practical partition limit</dt><dd>millions</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mt-0">
+      <div class="col-lg-7">
+        <div class="note h-100">
+          <strong>What to notice.</strong> On the ZooKeeper side, the new controller starts with nothing and must read every partition's record back from a different system before it can act, and because the controller was also a broker, its partitions are leaderless until then. Raise the partition count and the gap widens. On the KRaft side, every standby controller has been following the metadata log all along, so the takeover is a quick vote, and failing a controller does not take any of your data offline.
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="panel h-100">
+          <div class="panel-title">In your lab (Step 8)</div>
+          <p class="small mb-2"><code>kafka-storage.sh random-uuid</code> and <code>kafka-storage.sh format</code> create the metadata log on disk, once, like <code>hdfs namenode -format</code>.</p>
+          <p class="small mb-0"><code>config/kraft/server.properties</code> runs one process as both broker and controller (<code>process.roles=broker,controller</code>). With ZooKeeper you would start <code>zookeeper-server-start.sh</code> first, in its own terminal.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LESSON 5: FLUME -->
+<section class="lesson" id="flume">
+  <div class="container">
+    <div class="lesson-head">
+      <div class="cell"><span class="o">5</span><span class="k">offset</span></div>
+      <div>
+        <h2>Apache Flume: collecting logs and moving them in</h2>
+        <p class="mb-0">Kafka stores and serves events, but something has to collect them from the servers that write log files. <strong>Apache Flume</strong> is a collector from the Hadoop ecosystem built for exactly that: you describe a pipeline in a config file, start an <strong>agent</strong>, and it moves log lines into HDFS, Kafka or another destination, with no code.</p>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-lg-6">
+        <h3>An agent is three parts in one JVM process</h3>
+        <p>Every Flume agent has a <strong>source</strong> that reads input, a <strong>channel</strong> that buffers events, and a <strong>sink</strong> that writes them out. Data moves in <strong>transactions</strong>: the source commits a batch into the channel, and the sink removes events from the channel only after it has written them. That handshake is what makes Flume reliable, as long as the channel itself survives.</p>
+        <dl class="glossary glossary-tight">
+          <div><dt>Sources</dt><dd><code>exec</code> (runs <code>tail -F</code>), <code>TAILDIR</code> (tails files and remembers its position), <code>spooldir</code>, <code>syslog</code>, <code>netcat</code>, <code>kafka</code></dd></div>
+          <div><dt>Channels</dt><dd><code>memory</code> (fast, lost on crash), <code>file</code> (write-ahead log on disk), <code>kafka</code> (Kafka holds the buffer)</dd></div>
+          <div><dt>Sinks</dt><dd><code>hdfs</code>, <code>kafka</code>, <code>hbase</code>, <code>logger</code>, <code>avro</code> (to chain agents together)</dd></div>
+        </dl>
+      </div>
+      <div class="col-lg-6">
+        <h3>The same parts, in your lab's config</h3>
+        <pre class="conf" aria-label="Flume configuration from the lab"><span class="cf-agent">a1.sources  = tail_src
+a1.channels = mem_ch
+a1.sinks    = hdfs_sink</span><span class="cf-src">a1.sources.tail_src.type     = exec
+a1.sources.tail_src.command  = tail -F /home/hadoop/lab2/app.log
+a1.sources.tail_src.channels = mem_ch</span><span class="cf-ch">a1.channels.mem_ch.type      = memory
+a1.channels.mem_ch.capacity  = 10000</span><span class="cf-sink">a1.sinks.hdfs_sink.type      = hdfs
+a1.sinks.hdfs_sink.channel   = mem_ch
+a1.sinks.hdfs_sink.hdfs.path = hdfs://localhost:9000/user/flume/logs/%Y-%m-%d</span></pre>
+        <p class="small muted mb-0">Every line is <code>agent.component.name.setting</code>. The agent name must match <code>-n a1</code> when you start it, and a typo is silently ignored. Note that the source says <code>channels</code> (it can feed several) while the sink says <code>channel</code> (it reads exactly one).</p>
+      </div>
+    </div>
+
+    <!-- simulation -->
+    <div class="panel mb-3">
+      <div class="row g-3 align-items-end">
+        <div class="col-sm-6 col-lg-3">
+          <label class="form-label small muted mb-1" for="flSrc">Source</label>
+          <select class="form-select" id="flSrc"><option value="exec">exec (tail -F)</option><option value="taildir">TAILDIR</option></select>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <label class="form-label small muted mb-1" for="flCh">Channel</label>
+          <select class="form-select" id="flCh"><option value="memory">memory</option><option value="file">file</option></select>
+        </div>
+        <div class="col-lg-6 d-flex gap-2 flex-wrap">
+          <button class="btn btn-ink" id="flBurst">Write 40 log lines</button>
+          <button class="btn btn-danger-line" id="flCrash">Crash the agent (kill -9)</button>
+          <button class="btn btn-line" id="flRestart" disabled>Restart the agent</button>
+          <button class="btn btn-line" id="flReset">Reset</button>
+        </div>
+      </div>
+      <p class="small muted mt-2 mb-0">Changing the source or channel resets the run. The sink is deliberately slower than the source, as HDFS writes are, so a backlog builds up in the channel.</p>
+    </div>
+
+    <div class="flume-flow" id="flFlow">
+      <div class="fl-box" id="flLogBox">
+        <div class="fl-head">app.log <small>on local disk</small></div>
+        <div class="fl-cells" id="flLogCells"></div>
+        <div class="fl-meta tnum" id="flLogMeta"></div>
+      </div>
+      <div class="fl-agent" id="flAgent">
+        <div class="fl-agent-label">Flume agent <code>a1</code>: one JVM process <span class="fl-state" id="flState">running</span></div>
+        <div class="fl-agent-inner">
+          <div class="fl-box" id="flSrcBox">
+            <div class="fl-head">Source <small id="flSrcType">exec</small></div>
+            <div class="fl-cells" id="flSrcCells"></div>
+            <div class="fl-meta tnum" id="flSrcMeta"></div>
+          </div>
+          <div class="fl-box" id="flChBox">
+            <div class="fl-head">Channel <small id="flChType">memory: in RAM</small></div>
+            <div class="fl-cells" id="flChCells"></div>
+            <div class="fl-meta tnum" id="flChMeta"></div>
+          </div>
+          <div class="fl-box" id="flSinkBox">
+            <div class="fl-head">Sink <small>hdfs</small></div>
+            <div class="fl-cells" id="flSinkCells"></div>
+            <div class="fl-meta tnum" id="flSinkMeta"></div>
+          </div>
+        </div>
+      </div>
+      <div class="fl-box" id="flHdfsBox">
+        <div class="fl-head">HDFS <small>/user/flume/logs</small></div>
+        <div class="fl-cells" id="flHdfsCells"></div>
+        <div class="fl-meta tnum" id="flHdfsMeta"></div>
+      </div>
+    </div>
+
+    <div class="row g-3 mt-0">
+      <div class="col-lg-5">
+        <div class="panel h-100">
+          <div class="panel-title">Score for this run</div>
+          <dl class="stat-grid fl-stats" style="margin-top:0;border-top:0;padding-top:0">
+            <dt>Lines written to app.log</dt><dd id="fsW">0</dd>
+            <dt>Delivered to HDFS (unique)</dt><dd id="fsU">0</dd>
+            <dt>Duplicates in HDFS</dt><dd id="fsD">0</dd>
+            <dt>Still on their way</dt><dd id="fsP">0</dd>
+            <dt class="text-danger">Lost for good</dt><dd id="fsL" class="text-danger">0</dd>
+          </dl>
+          <div class="fl-legend mt-3">
+            <span><i class="lg unread"></i>not read yet</span><span><i class="lg read"></i>read by source</span><span><i class="lg chan"></i>in channel</span><span><i class="lg sent"></i>in HDFS</span><span><i class="lg dup"></i>duplicate</span><span><i class="lg lost"></i>lost</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-7">
+        <div class="note h-100">
+          <strong>Try the three runs from the lab.</strong> For each, write 40 lines, crash the agent while the channel is still full, restart, and let it drain.<br>
+          <b>memory + exec:</b> everything in the channel, plus every line not read yet, is lost.<br>
+          <b>file + exec:</b> the channel's backlog survives on disk and is delivered after the restart, but <code>tail -F</code> restarts at the end of the file, so unread lines are still lost.<br>
+          <b>file + TAILDIR:</b> the source resumes from its saved position. Nothing is lost; a few lines may arrive twice. That is <strong>at-least-once</strong> delivery.<br>
+          Bonus: crash it, write 40 more lines while it is down, then restart with each source.
+        </div>
+      </div>
+    </div>
+
+    <!-- small files -->
+    <div class="row g-4 mt-2">
+      <div class="col-lg-6">
+        <h3>The HDFS sink and the small-files trap</h3>
+        <p>The HDFS sink starts a new file whenever any of three limits is hit: <code>hdfs.rollCount</code> (default 10 events), <code>hdfs.rollSize</code> (default 1 KB) and <code>hdfs.rollInterval</code> (default 30 seconds). With the defaults, a busy agent creates a file every few events. The NameNode keeps every file and block in memory, roughly 150 bytes each, so millions of tiny files slow the whole cluster down.</p>
+        <p class="mb-0">The lab sets <code>rollSize</code> to 128 MB (one block), <code>rollCount = 0</code> (off) and <code>rollInterval = 60</code> as a backstop so a quiet source still closes its file.</p>
+      </div>
+      <div class="col-lg-6">
+        <div class="panel">
+          <div class="row g-2 align-items-end mb-3">
+            <div class="col-sm-6">
+              <label class="form-label small muted mb-1" for="sfEvents">Log lines in one burst</label>
+              <select class="form-select" id="sfEvents"><option value="10000">10,000</option><option value="100000" selected>100,000</option><option value="1000000">1,000,000</option></select>
+            </div>
+            <div class="col-sm-6">
+              <div class="btn-group w-100" role="radiogroup" aria-label="Roll settings">
+                <input type="radio" class="btn-check" name="sfMode" id="sfDef" value="def" checked><label class="btn btn-line" for="sfDef">Defaults</label>
+                <input type="radio" class="btn-check" name="sfMode" id="sfLab" value="lab"><label class="btn btn-line" for="sfLab">Lab settings</label>
+              </div>
+            </div>
+          </div>
+          <div class="sf-grid" id="sfGrid" aria-hidden="true"></div>
+          <div class="small muted mt-1" id="sfScale"></div>
+          <dl class="stat-grid" style="margin-top:.75rem">
+            <dt>HDFS files created</dt><dd id="sfFiles"></dd>
+            <dt>Average file size</dt><dd id="sfAvg"></dd>
+            <dt>NameNode memory for these files</dt><dd id="sfMem"></dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <!-- flume vs kafka -->
+    <div class="row g-4 mt-2">
+      <div class="col-lg-7">
+        <h3 class="mb-3">Flume and Kafka side by side</h3>
+        <div class="table-responsive">
+          <table class="table proc-table mb-0">
+            <thead><tr><th></th><th>Flume</th><th>Kafka</th></tr></thead>
+            <tbody>
+              <tr><td><b>What it is</b></td><td>A collector agent you configure</td><td>A cluster that stores events</td></tr>
+              <tr><td><b>Data flow</b></td><td>Push: one path in, one path out</td><td>Publish and subscribe: many readers</td></tr>
+              <tr><td><b>After delivery</b></td><td>The event leaves the channel</td><td>The event stays for the retention period</td></tr>
+              <tr><td><b>Replay</b></td><td>Not possible</td><td>Any group can rewind to an offset</td></tr>
+              <tr><td><b>Durability depends on</b></td><td>Channel type and source position</td><td>Replication and <code>acks</code></td></tr>
+              <tr><td><b>Good at</b></td><td>Getting log files into HDFS with a config file</td><td>Being the backbone between many systems</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <h3 class="mb-3">Using them together (Step 12)</h3>
+        <div class="bridge">
+          <div class="br-node">Log files on servers</div>
+          <div class="br-arrow">collected by</div>
+          <div class="br-node br-flume">Flume agent: source and channel unchanged, sink swapped to <code>KafkaSink</code></div>
+          <div class="br-arrow">writes to</div>
+          <div class="br-node br-kafka">Kafka topic <code>security-events</code></div>
+          <div class="br-arrow">read by</div>
+          <div class="br-node">Alerting, archive, dashboard: each its own consumer group</div>
+        </div>
+        <p class="small muted mt-2 mb-0">For your report: which would you choose to archive web server logs into HDFS, and which to feed three different downstream systems? Use the rows of the table as your reasons.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LESSON 6: QUIZ -->
+<section class="lesson" id="check">
+  <div class="container">
+    <div class="lesson-head">
+      <div class="cell"><span class="o">6</span><span class="k">offset</span></div>
+      <div>
+        <h2>Check yourself</h2>
+        <p class="mb-0">Pick an answer to see whether it is right and why. Score: <strong class="tnum" id="score">0</strong></p>
+      </div>
+    </div>
+    <div class="row"><div class="col-lg-9" id="quiz"></div></div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="container">
+    Big Data Analytics, Lab II: collecting and importing data with Apache Flume and Kafka. The simulations are simplified for teaching: real Kafka hashes keys with murmur2, batches writes, and uses timeouts measured in seconds.
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function(){
+"use strict";
+
+/* ---------- shared helpers ---------- */
+const $ = (s, r=document) => r.querySelector(s);
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const hasGsap = typeof window.gsap !== 'undefined';
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const KEYS = ['web01','db01','fw01','vpn01'];
+const KEY_COLOR = {web01:'var(--k-web01)',db01:'var(--k-db01)',fw01:'var(--k-fw01)',vpn01:'var(--k-vpn01)',none:'var(--k-none)'};
+const EVENTS = ['login failed','login failed again','account locked','port scan detected','firewall rule changed'];
+const PARTS = 3;
+
+function hashKey(k){ let x=0; for(const c of k){ x=(Math.imul(x,31)+c.charCodeAt(0))|0; } return Math.abs(x)%PARTS; }
+function center(el){ const r=el.getBoundingClientRect(); return {x:r.left+r.width/2, y:r.top+r.height/2, r}; }
+function onScreen(r){ return r.bottom>0 && r.top<window.innerHeight && r.right>0 && r.left<window.innerWidth; }
+
+/* animate a small square from one element to another; resolves when it lands */
+function fly(fromEl, toEl, color, opts={}){
+  return new Promise(resolve => {
+    if(!fromEl || !toEl || reduceMotion || !hasGsap){ resolve(); return; }
+    const a=center(fromEl), b=center(toEl);
+    if(!onScreen(a.r) && !onScreen(b.r)){ resolve(); return; }
+    const d=document.createElement('div');
+    d.className='dot'+(opts.ack?' ack':'');
+    if(!opts.ack) d.style.background=color;
+    $('#flight').appendChild(d);
+    const dur=opts.duration || 0.6;
+    gsap.set(d,{x:a.x,y:a.y,scale:.6});
+    const tl=gsap.timeline({onComplete(){ d.remove(); resolve(); }});
+    tl.to(d,{x:b.x,duration:dur,ease:'power1.inOut'},0)
+      .to(d,{y:b.y,duration:dur,ease:'power2.in'},0)
+      .to(d,{scale:1,duration:dur*0.4},0);
+  });
+}
+function pulse(el){ if(el && hasGsap && !reduceMotion) gsap.fromTo(el,{scale:1.12},{scale:1,duration:.35,ease:'back.out(3)'}); }
+function shake(el){ if(el && hasGsap && !reduceMotion) gsap.fromTo(el,{x:-6},{x:0,duration:.4,ease:'elastic.out(1,0.3)'}); }
+
+/* ---------- HERO: an endless log with two readers ---------- */
+(function hero(){
+  const tape=$('#heroTape'), stage=$('#heroStage');
+  const W=$('#heroWrite'), F=$('#heroFast'), S=$('#heroSlow');
+  let next=0; const keys=[...KEYS,'none'];
+  function makeCell(o){
+    const k=keys[(o*7+3)%keys.length];
+    const c=document.createElement('div'); c.className='cell'+(k!=='none'?' keyed':'');
+    if(k!=='none') c.style.borderLeftColor=KEY_COLOR[k];
+    c.innerHTML=`<span class="o">${o}</span><span class="k">${k==='none'?'':k}</span>`;
+    return c;
+  }
+  function fits(){ return Math.max(8, Math.floor((tape.clientWidth||800)/50)); }
+  for(let i=0;i<fits()-1;i++) tape.appendChild(makeCell(next++));
+  function place(){
+    const cells=tape.children; if(!cells.length) return;
+    const sr=stage.getBoundingClientRect();
+    const at=i=>{ const c=cells[Math.max(0,Math.min(cells.length-1,i))].getBoundingClientRect(); return (c.left+c.width/2-sr.left)+'px'; };
+    W.style.left=at(cells.length-1);
+    F.style.left=at(cells.length-2);
+    S.style.left=at(Math.max(1,Math.floor(cells.length*0.25)));
+  }
+  place();
+  window.addEventListener('resize',place);
+  if(reduceMotion) return;
+  setInterval(()=>{
+    const c=makeCell(next++); tape.appendChild(c);
+    if(tape.children.length>fits()) tape.removeChild(tape.firstElementChild);
+    if(hasGsap) gsap.from(c,{y:-24,opacity:0,duration:.45,ease:'power2.out'});
+    place();
+  },1400);
+})();
+
+/* ---------- shared topic model used by lessons 0 and 1 ---------- */
+const topic={ parts:[[],[],[]], rr:0 };
+const groupA={ offsets:[0,0,0] }, groupB={ offsets:[0,0,0], on:false, read:0, rr:0 };
+const listeners=[];
+function onTopicChange(fn){ listeners.push(fn); }
+function emit(){ listeners.forEach(f=>f()); }
+
+function produce(key, text, fromEl){
+  const p = key==='none' ? (topic.rr++ % PARTS) : hashKey(key);
+  const msg={key, text, offset:topic.parts[p].length};
+  topic.parts[p].push(msg);
+  const cell=renderCell(p,msg,true);
+  return fly(fromEl, cell, KEY_COLOR[key]).then(()=>{ cell.classList.remove('ghost'); pulse(cell); emit(); });
+}
+
+/* ---------- LESSON 0 UI ---------- */
+let selectedKey='web01';
+(function lesson0(){
+  const kg=$('#keyGroup');
+  [...KEYS,'none'].forEach((k,i)=>{
+    const id='key_'+k;
+    kg.insertAdjacentHTML('beforeend',
+      `<input type="radio" class="btn-check" name="key" id="${id}" value="${k}" ${i===0?'checked':''}>
+       <label class="btn btn-line btn-sm key-btn" for="${id}"><span class="key-swatch" style="background:${KEY_COLOR[k]}"></span>${k==='none'?'no key':k}</label>`);
+  });
+  kg.addEventListener('change',e=>{ selectedKey=e.target.value; hint(); styleChecked(); });
+  function styleChecked(){
+    kg.querySelectorAll('.btn-check').forEach(inp=>{
+      const lab=kg.querySelector(`label[for="${inp.id}"]`);
+      lab.style.background=inp.checked?(KEY_COLOR[inp.value]):'';
+      lab.style.borderColor=inp.checked?(KEY_COLOR[inp.value]):'';
+      lab.querySelector('.key-swatch').style.background=inp.checked?'#fff':KEY_COLOR[inp.value];
+    });
+  }
+  function hint(){
+    $('#routeHint').innerHTML = selectedKey==='none'
+      ? 'No key: events are spread across partitions, so there is no ordering between them.'
+      : `Key <strong>${selectedKey}</strong> always goes to <strong>partition ${hashKey(selectedKey)}</strong> (hash of the key, modulo 3 partitions).`;
+  }
+  styleChecked(); hint();
+
+  const wrap=$('#partitions1');
+  for(let p=0;p<PARTS;p++){
+    wrap.insertAdjacentHTML('beforeend',
+      `<div class="partition-row"><div class="p-label">P${p}<small class="tnum" id="p1n${p}">0 events</small></div>
+       <div class="tape" id="tape${p}" tabindex="0" aria-label="Partition ${p} log"><span class="tape-empty">empty</span></div></div>`);
+  }
+  $('#sendOne').addEventListener('click',e=>produce(selectedKey,$('#eventText').value,e.currentTarget));
+  $('#sendTen').addEventListener('click',async e=>{
+    const btn=e.currentTarget; btn.disabled=true;
+    for(let i=0;i<10;i++){ const k=[...KEYS,'none'][Math.floor(Math.random()*5)]; produce(k,EVENTS[Math.floor(Math.random()*EVENTS.length)],btn); await sleep(140); }
+    await sleep(500); btn.disabled=false;
+  });
+  $('#clearTopic').addEventListener('click',()=>{
+    topic.parts=[[],[],[]]; topic.rr=0; groupA.offsets=[0,0,0]; groupB.offsets=[0,0,0]; groupB.read=0;
+    consumersState.forEach(c=>c.read=0);
+    for(let p=0;p<PARTS;p++) $('#tape'+p).innerHTML='<span class="tape-empty">empty</span>';
+    emit(); renderConsumers(false);
+  });
+  onTopicChange(()=>{ for(let p=0;p<PARTS;p++) $('#p1n'+p).textContent=topic.parts[p].length+' events'; });
+})();
+
+function renderCell(p,msg,ghost){
+  const tape=$('#tape'+p);
+  const empty=tape.querySelector('.tape-empty'); if(empty) empty.remove();
+  const c=document.createElement('div');
+  c.className='cell'+(msg.key!=='none'?' keyed':'')+(ghost?' ghost':'');
+  if(msg.key!=='none') c.style.borderLeftColor=KEY_COLOR[msg.key];
+  c.title=`offset ${msg.offset}: ${msg.key==='none'?'(no key)':msg.key}, ${msg.text}`;
+  c.innerHTML=`<span class="o">${msg.offset}</span><span class="k">${msg.key==='none'?'':msg.key}</span>`;
+  tape.appendChild(c);
+  while(tape.children.length>60) tape.removeChild(tape.firstElementChild);
+  tape.scrollLeft=tape.scrollWidth;
+  return c;
+}
+
+/* ---------- LESSON 1: consumer groups ---------- */
+let consumersState=[]; let rebalanceUntil=0;
+function assignment(n){
+  // range assignor: consumers sorted, partitions split in contiguous ranges
+  const res=Array.from({length:n},()=>[]);
+  const active=Math.min(n,PARTS), base=Math.floor(PARTS/active), extra=PARTS%active;
+  let p=0;
+  for(let i=0;i<active;i++){ const take=base+(i<extra?1:0); for(let j=0;j<take;j++) res[i].push(p++); }
+  return res;
+}
+(function lesson1(){
+  const tracks=$('#tracks');
+  for(let p=0;p<PARTS;p++){
+    tracks.insertAdjacentHTML('beforeend',
+      `<div class="track-row"><div class="p-label">P${p}</div>
+        <div class="track" id="track${p}"><div class="fill"></div>
+          <div class="marker a" id="mA${p}" style="left:0%"><span>alerting</span></div>
+          <div class="marker b d-none" id="mB${p}" style="left:0%"><span>archive</span></div></div>
+        <div class="lagbox" id="lag${p}"></div></div>`);
+  }
+  const slider=$('#consumerCount');
+  slider.addEventListener('input',()=>{ $('#consumerCountVal').textContent=slider.value; renderConsumers(true); });
+  renderConsumers(false);
+  onTopicChange(updateTracks);
+  updateTracks();
+
+  let prodTimer=null, consTimer=null;
+  $('#autoProduce').addEventListener('change',e=>{
+    clearInterval(prodTimer);
+    if(e.target.checked) prodTimer=setInterval(()=>{
+      const k=[...KEYS,'none'][Math.floor(Math.random()*5)];
+      produce(k,EVENTS[Math.floor(Math.random()*EVENTS.length)],$('#autoProduce'));
+    },480);
+  });
+  $('#runConsumers').addEventListener('change',e=>{
+    clearInterval(consTimer);
+    if(e.target.checked) consTimer=setInterval(consumeTick,900);
+  });
+  $('#groupB').addEventListener('change',e=>{
+    groupB.on=e.target.checked;
+    $('#groupBWrap').classList.toggle('d-none',!groupB.on);
+    $('#replayB').disabled=!groupB.on;
+    for(let p=0;p<PARTS;p++) $('#mB'+p).classList.toggle('d-none',!groupB.on);
+    updateTracks();
+  });
+  $('#replayB').addEventListener('click',()=>{ groupB.offsets=[0,0,0]; updateTracks(); pulse($('#consumerB')); });
+})();
+
+
+function renderConsumers(rebalance){
+  const n=+$('#consumerCount').value, asg=assignment(n), box=$('#consumersA');
+  consumersState=asg.map((parts,i)=>({parts, rr:0, read:(consumersState[i]&&consumersState[i].read)||0}));
+  box.innerHTML=consumersState.map((c,i)=>`
+    <div class="col-6 col-sm-4 col-lg-6 col-xl-4">
+      <div class="consumer ${c.parts.length?'active':'idle'} ${rebalance?'rebalancing':''}" id="cA${i}">
+        <div class="name">alerting-${i+1}</div>
+        <div class="count tnum">read ${c.read}</div>
+        <div>${c.parts.length?c.parts.map(p=>`<span class="chip">P${p}</span>`).join(''):'<span class="small">Idle: no partition left</span>'}</div>
+      </div></div>`).join('');
+  if(rebalance){
+    rebalanceUntil=Date.now()+900;
+    setTimeout(()=>box.querySelectorAll('.rebalancing').forEach(el=>el.classList.remove('rebalancing')),900);
+  }
+}
+function updateTracks(){
+  for(let p=0;p<PARTS;p++){
+    const end=topic.parts[p].length, a=groupA.offsets[p], b=groupB.offsets[p];
+    const pct=v=> end? (v/end*97+1.5):1.5;
+    $('#mA'+p).style.left=pct(a)+'%';
+    $('#mB'+p).style.left=pct(b)+'%';
+    $('#lag'+p).innerHTML=`end offset <b>${end}</b><br><span style="color:var(--signal)">alerting at ${a}, lag <b>${end-a}</b></span>`+
+      (groupB.on?`<br><span style="color:var(--k-vpn01)">archive at ${b}, lag <b>${end-b}</b></span>`:'');
+  }
+}
+function consumeTick(){
+  if(Date.now()<rebalanceUntil) return; // stop-the-world while the group rebalances
+  consumersState.forEach((c,i)=>{
+    if(!c.parts.length) return;
+    for(let t=0;t<c.parts.length;t++){
+      const p=c.parts[(c.rr+t)%c.parts.length];
+      if(groupA.offsets[p]<topic.parts[p].length){
+        c.rr=(c.rr+t+1)%c.parts.length;
+        const msg=topic.parts[p][groupA.offsets[p]];
+        groupA.offsets[p]++; c.read++;
+        const card=$('#cA'+i);
+        fly($('#mA'+p),card,KEY_COLOR[msg.key],{duration:.5}).then(()=>{ const ct=card&&card.querySelector('.count'); if(ct) ct.textContent='read '+c.read; });
+        break;
+      }
+    }
+  });
+  if(groupB.on){
+    for(let t=0;t<PARTS;t++){
+      const p=(groupB.rr+t)%PARTS;
+      if(groupB.offsets[p]<topic.parts[p].length){
+        groupB.rr=(p+1)%PARTS;
+        const msg=topic.parts[p][groupB.offsets[p]];
+        groupB.offsets[p]++; groupB.read++;
+        fly($('#mB'+p),$('#consumerB'),KEY_COLOR[msg.key],{duration:.5}).then(()=>{ $('#consumerB .count').textContent='read '+groupB.read; });
+        break;
+      }
+    }
+  }
+  updateTracks();
+}
+
+/* ---------- LESSON 2: replication ---------- */
+const rep={};
+function repInit(){
+  rep.brokers=[1,2,3].map(id=>({id,alive:true}));
+  rep.parts=[0,1,2].map(p=>({id:p, leader:p+1, isr:[1,2,3], log:{1:0,2:0,3:0}}));
+  rep.busy=false;
+  $('#repLog').innerHTML='';
+  renderBrokers();
+  logRep('Cluster ready: 3 brokers, every partition has 3 in-sync copies.','good');
+}
+function aliveB(id){ return rep.brokers.find(b=>b.id===id).alive; }
+function renderBrokers(){
+  $('#brokers').innerHTML=rep.brokers.map(b=>`
+    <div class="col-md-4"><div class="broker ${b.alive?'':'down'}" id="broker${b.id}">
+      <div class="broker-head"><b>Broker ${b.id}</b><span class="status ${b.alive?'up':'dn'}">${b.alive?'running':'down'}</span></div>
+      ${rep.parts.map(p=>{
+        const isLeader=p.leader===b.id && b.alive, inIsr=p.isr.includes(b.id);
+        const role=!b.alive?'offline':isLeader?'leader':inIsr?'follower, in sync':'follower, catching up';
+        const cls=!b.alive?'off':isLeader?'leader':inIsr?'':'lagging';
+        return `<div class="replica ${cls}" id="r${p.id}b${b.id}"><span class="rp">P${p.id}</span><span class="role">${role}</span><span class="n" title="events stored">${p.log[b.id]}</span></div>`;
+      }).join('')}
+      <button class="btn btn-sm ${b.alive?'btn-danger-line':'btn-line'} w-100 mt-1" data-broker="${b.id}">${b.alive?'Kill broker '+b.id:'Restart broker '+b.id}</button>
+    </div></div>`).join('');
+}
+function logRep(text,kind=''){
+  const t=new Date(), ts=t.toTimeString().slice(0,8);
+  $('#repLog').insertAdjacentHTML('afterbegin',`<li class="${kind}"><time>${ts}</time>${text}</li>`);
+}
+(function lesson2(){
+  repInit();
+  $('#repReset').addEventListener('click',repInit);
+  $('#brokers').addEventListener('click',e=>{
+    const btn=e.target.closest('button[data-broker]'); if(!btn||rep.busy) return;
+    const id=+btn.dataset.broker, b=rep.brokers.find(x=>x.id===id);
+    b.alive ? killBroker(id) : restartBroker(id);
+  });
+  $('#repWrite').addEventListener('click',repWrite);
+})();
+function killBroker(id){
+  rep.brokers.find(b=>b.id===id).alive=false;
+  const notes=[];
+  rep.parts.forEach(p=>{
+    p.isr=p.isr.filter(x=>x!==id);
+    if(p.leader===id){
+      const nl=p.isr.find(aliveB);
+      p.leader=nl||null;
+      notes.push(nl?`P${p.id} leader moved to broker ${nl}`:`P${p.id} has no in-sync copy left and is offline`);
+    }
+  });
+  renderBrokers();
+  logRep(`Broker ${id} died. ${notes.length?notes.join('. ')+'.':'It led no partitions, so only follower copies were lost.'}`,'bad');
+  rep.parts.forEach(p=>{ if(p.leader) pulse($(`#r${p.id}b${p.leader}`)); });
+}
+async function restartBroker(id){
+  rep.busy=true;
+  rep.brokers.find(b=>b.id===id).alive=true;
+  rep.parts.forEach(p=>{ if(p.leader===null){ p.leader=id; p.isr=[id]; logRep(`P${p.id} back online with broker ${id} as leader.`,'good'); } });
+  renderBrokers();
+  logRep(`Broker ${id} restarted and is copying what it missed from the leaders.`);
+  await sleep(500);
+  for(const p of rep.parts){
+    if(p.isr.includes(id)) continue;
+    const target=p.log[p.leader];
+    const from=$(`#r${p.id}b${p.leader}`), to=$(`#r${p.id}b${id}`);
+    if(p.log[id]<target){ await fly(from,to,'var(--ink)',{duration:.5}); }
+    p.log[id]=target; p.isr.push(id); p.isr.sort();
+    renderBrokers(); pulse($(`#r${p.id}b${id}`));
+  }
+  logRep(`Broker ${id} has caught up and is back in the in-sync set for every partition.`,'good');
+  rep.busy=false;
+}
+async function repWrite(){
+  if(rep.busy) return;
+  const p=rep.parts[+$('#repPartition').value], acks=$('#repAcks').value;
+  const prod=$('#repProducer'), state=$('#repProducerState');
+  if(!p.leader){ logRep(`Write to P${p.id} failed: no leader available. Every copy is on a dead broker.`,'bad'); shake(prod); return; }
+  if(acks==='all' && p.isr.length<2){
+    logRep(`Write to P${p.id} refused: only ${p.isr.length} in-sync copy, and min.insync.replicas is 2. The producer gets NotEnoughReplicas and can retry later.`,'bad');
+    state.textContent='refused'; shake(prod); return;
+  }
+  rep.busy=true; state.textContent='sending';
+  const leaderEl=$(`#r${p.id}b${p.leader}`);
+  await fly(prod,leaderEl,'var(--k-web01)');
+  p.log[p.leader]++; renderBrokers(); pulse($(`#r${p.id}b${p.leader}`));
+  const followers=p.isr.filter(x=>x!==p.leader && aliveB(x));
+  if(acks==='1'){
+    state.textContent='acknowledged';
+    fly($(`#r${p.id}b${p.leader}`),prod,null,{ack:true,duration:.45});
+    logRep(`P${p.id}: acknowledged after the leader (broker ${p.leader}) wrote it. Followers copy it afterwards${followers.length?'':', but there are none in sync, so this event exists on one disk only'}.`, followers.length?'':'bad');
+  }
+  await Promise.all(followers.map(f=>fly($(`#r${p.id}b${p.leader}`),$(`#r${p.id}b${f}`),'var(--k-web01)',{duration:.45})));
+  followers.forEach(f=>p.log[f]++);
+  renderBrokers(); followers.forEach(f=>pulse($(`#r${p.id}b${f}`)));
+  if(acks==='all'){
+    await fly($(`#r${p.id}b${p.leader}`),prod,null,{ack:true,duration:.45});
+    state.textContent='acknowledged';
+    logRep(`P${p.id}: acknowledged only after all ${p.isr.length} in-sync copies stored it (brokers ${p.isr.join(', ')}).`,'good');
+  }
+  rep.busy=false;
+}
+
+/* ---------- LESSON 3: ZooKeeper vs KRaft ---------- */
+const arch={zkRunning:false, krRunning:false, krTimer:null, metaOffset:0};
+function resetArch(){
+  arch.zkRunning=arch.krRunning=false;
+  $('#zkBrokers').innerHTML=[1,2,3].map(i=>`<div class="node" id="zkb${i}">broker ${i}${i===1?'<span class="badge-ctrl">controller</span>':''}</div>`).join('');
+  $('#krCtrls').innerHTML=[1,2,3].map(i=>`<div class="node ctrl ${i===1?'active-ctrl':''}" id="krc${i}">controller ${i}<small>${i===1?'active':'standby, following'}</small><div class="mini-log" id="ml${i}"></div></div>`).join('');
+  ['zk','kr'].forEach(s=>{
+    $('#'+s+'Clock').textContent='0.0 s';
+    $('#'+s+'Bar').style.width='0%';
+    $('#'+s+'LoadText').innerHTML='&nbsp;';
+    $('#'+s+'Offline').textContent='0';
+    $('#'+s+'Steps').querySelectorAll('li').forEach(li=>li.className='');
+  });
+  $('#zkFail').disabled=false; $('#krFail').disabled=false; $('#raceBoth').disabled=false;
+  for(let i=1;i<=3;i++) drawMiniLog(i);
+}
+function drawMiniLog(i){
+  const el=$('#ml'+i); if(!el) return;
+  const n=Math.min(8, 3+(arch.metaOffset%6));
+  el.innerHTML='<i></i>'.repeat(n);
+}
+function stepState(list,idx,state){ const li=list.querySelectorAll('li')[idx]; if(li) li.className=state; }
+function clock(el,start){ el.textContent=((performance.now()-start)/1000).toFixed(1)+' s'; }
+
+async function failZk(){
+  if(arch.zkRunning) return; arch.zkRunning=true; $('#zkFail').disabled=true;
+  const N=+$('#partCount').value, steps=$('#zkSteps'), clk=$('#zkClock'), t0=performance.now();
+  const tick=setInterval(()=>clock(clk,t0),100);
+  const ctrl=$('#zkb1'); ctrl.classList.add('dead'); ctrl.querySelector('.badge-ctrl').remove(); shake(ctrl);
+  const offline=Math.round(N/3);
+  $('#zkOffline').textContent=offline.toLocaleString();
+  stepState(steps,0,'doing'); await sleep(600); stepState(steps,0,'done');
+  stepState(steps,1,'doing'); await sleep(500); stepState(steps,1,'done');
+  $('#zkb2').insertAdjacentHTML('beforeend','<span class="badge-ctrl">controller</span>'); pulse($('#zkb2'));
+  stepState(steps,2,'doing');
+  const loadMs=700+(N/200000)*9000, l0=performance.now();
+  await new Promise(res=>{
+    const iv=setInterval(()=>{
+      const f=Math.min(1,(performance.now()-l0)/loadMs);
+      $('#zkBar').style.width=(f*100)+'%';
+      $('#zkLoadText').textContent=`Loaded ${Math.round(f*N).toLocaleString()} of ${N.toLocaleString()} partition records from ZooKeeper`;
+      if(f>=1){ clearInterval(iv); res(); }
+    },60);
+  });
+  stepState(steps,2,'done'); stepState(steps,3,'doing'); await sleep(450); stepState(steps,3,'done');
+  $('#zkOffline').textContent='0';
+  clearInterval(tick); clock(clk,t0);
+}
+async function failKr(){
+  if(arch.krRunning) return; arch.krRunning=true; $('#krFail').disabled=true;
+  const N=+$('#partCount').value, steps=$('#krSteps'), clk=$('#krClock'), t0=performance.now();
+  const tick=setInterval(()=>clock(clk,t0),100);
+  const c1=$('#krc1'); c1.classList.remove('active-ctrl'); c1.classList.add('dead'); c1.querySelector('small').textContent='failed'; shake(c1);
+  stepState(steps,0,'doing'); await sleep(600); stepState(steps,0,'done');
+  stepState(steps,1,'doing'); await sleep(300); stepState(steps,1,'done');
+  const c2=$('#krc2'); c2.classList.add('active-ctrl'); c2.querySelector('small').textContent='active'; pulse(c2);
+  stepState(steps,2,'doing'); $('#krBar').style.width='100%';
+  $('#krLoadText').textContent=`All ${N.toLocaleString()} partition records were already in its copy of the log`;
+  await sleep(150); stepState(steps,2,'done'); stepState(steps,3,'done');
+  clearInterval(tick); clock(clk,t0);
+}
+(function lesson3(){
+  resetArch();
+  $('#zkFail').addEventListener('click',failZk);
+  $('#krFail').addEventListener('click',failKr);
+  $('#raceBoth').addEventListener('click',()=>{ $('#raceBoth').disabled=true; failZk(); failKr(); });
+  $('#resetArch').addEventListener('click',resetArch);
+  $('#partCount').addEventListener('change',resetArch);
+  // the active controller appends metadata records; standbys replicate them
+  if(!reduceMotion) setInterval(()=>{
+    const active=[1,2,3].find(i=>$('#krc'+i)&&$('#krc'+i).classList.contains('active-ctrl'));
+    if(!active) return;
+    arch.metaOffset++;
+    drawMiniLog(active);
+    [1,2,3].filter(i=>i!==active && !$('#krc'+i).classList.contains('dead')).forEach(i=>{
+      fly($('#ml'+active),$('#ml'+i),'var(--signal)',{duration:.5}).then(()=>drawMiniLog(i));
+    });
+  },1800);
+})();
+
+/* ---------- LESSON 5: Flume agent ---------- */
+const fl={};
+function flInit(){
+  clearInterval(fl.timer);
+  Object.assign(fl,{W:0, status:[], readPos:0, committedPos:0, srcBatch:[], chan:[], inflight:[], stage:0,
+    hdfs:[], delivered:new Set(), lost:new Set(), dups:0, running:true, tick:0,
+    src:$('#flSrc').value, ch:$('#flCh').value});
+  $('#flSrcType').textContent=fl.src==='exec'?'exec: tail -F':'TAILDIR';
+  $('#flAgent').classList.remove('crashed'); $('#flState').textContent='running'; $('#flState').classList.remove('dn');
+  $('#flCrash').disabled=false; $('#flRestart').disabled=true;
+  fl.timer=setInterval(flTick,240);
+  flRender();
+}
+function flTick(){
+  if(!fl.running) return;
+  fl.tick++;
+  // source: read up to 2 lines per tick, commit to the channel in batches of 5
+  let readNow=0;
+  while(readNow<2 && fl.readPos<fl.W){ const id=fl.readPos++; fl.srcBatch.push(id); fl.status[id]='read'; readNow++; }
+  if(readNow) fly($('#flLogBox'),$('#flSrcBox'),'var(--k-web01)',{duration:.35});
+  if(fl.srcBatch.length>=5 || (fl.srcBatch.length && fl.readPos>=fl.W)){
+    fl.srcBatch.forEach(id=>fl.status[id]='chan');
+    fl.chan.push(...fl.srcBatch); fl.srcBatch=[]; fl.committedPos=fl.readPos;
+    fly($('#flSrcBox'),$('#flChBox'),'var(--signal)',{duration:.35});
+  }
+  // sink: take a batch of 3, write it to HDFS, then commit (remove from channel). One step per tick.
+  if(fl.tick%1===0){
+    if(fl.stage===0 && fl.chan.length){ fl.inflight=fl.chan.slice(0,3); fl.stage=1; }
+    else if(fl.stage===1){
+      fl.inflight.forEach(id=>{ if(fl.delivered.has(id)) fl.dups++; else fl.delivered.add(id); fl.hdfs.push(id); fl.status[id]='sent'; });
+      fly($('#flSinkBox'),$('#flHdfsBox'),'var(--k-db01)',{duration:.35});
+      fl.stage=2;
+    } else if(fl.stage===2){ fl.chan.splice(0,fl.inflight.length); fl.inflight=[]; fl.stage=0; }
+  }
+  flRender();
+}
+function flCrash(){
+  if(!fl.running) return;
+  fl.running=false;
+  // source batch: read but never committed to the channel
+  if(fl.src==='exec') fl.srcBatch.forEach(id=>{ fl.lost.add(id); fl.status[id]='lost'; });
+  else { fl.srcBatch.forEach(id=>fl.status[id]='unread'); fl.readPos=fl.committedPos; }
+  fl.srcBatch=[];
+  // channel
+  if(fl.ch==='memory'){ fl.chan.forEach(id=>{ if(!fl.delivered.has(id)){ fl.lost.add(id); fl.status[id]='lost'; } }); fl.chan=[]; }
+  // a sink batch written but not yet committed stays in a file channel and will be sent again
+  fl.inflight=[]; fl.stage=0;
+  $('#flAgent').classList.add('crashed'); $('#flState').textContent='crashed'; $('#flState').classList.add('dn');
+  $('#flCrash').disabled=true; $('#flRestart').disabled=false;
+  shake($('#flAgent'));
+  flRender();
+}
+function flRestart(){
+  if(fl.running) return;
+  if(fl.src==='exec'){
+    // tail -F starts at the end of the file: anything not yet read is never collected
+    for(let id=fl.readPos; id<fl.W; id++){ fl.lost.add(id); fl.status[id]='lost'; }
+    fl.readPos=fl.W; fl.committedPos=fl.W;
+  }
+  fl.running=true;
+  $('#flAgent').classList.remove('crashed'); $('#flState').textContent='running'; $('#flState').classList.remove('dn');
+  $('#flCrash').disabled=false; $('#flRestart').disabled=true;
+  pulse($('#flChBox'));
+  flRender();
+}
+function sqs(ids,cls){ return ids.slice(-60).map(id=>`<i class="sq ${cls||fl.status[id]}" title="line ${id+1}"></i>`).join(''); }
+function flRender(){
+  const all=[...Array(fl.W).keys()];
+  $('#flLogCells').innerHTML=sqs(all);
+  $('#flLogMeta').textContent=`${fl.W} lines, ${fl.W-fl.readPos} not read yet`+(fl.W>60?' (last 60 shown)':'');
+  $('#flSrcCells').innerHTML=sqs(fl.srcBatch,'read');
+  $('#flSrcMeta').innerHTML=fl.src==='exec'
+    ? `Read position: line ${fl.readPos}<br>Kept only in memory`
+    : `Read position: line ${fl.readPos}<br>Saved to disk: line ${fl.committedPos}`;
+  $('#flChCells').innerHTML=sqs(fl.chan,'chan');
+  const chBox=$('#flChBox');
+  chBox.classList.toggle('ram-wiped',!fl.running && fl.ch==='memory');
+  chBox.classList.toggle('on-disk',!fl.running && fl.ch==='file');
+  $('#flChType').textContent=fl.ch==='memory'?'memory: in RAM':'file: write-ahead log on disk';
+  $('#flChMeta').textContent=!fl.running
+    ? (fl.ch==='memory'?'Process died: RAM wiped':`${fl.chan.length} events safe on disk`)
+    : `${fl.chan.length} events waiting`;
+  $('#flSinkCells').innerHTML=sqs(fl.inflight,'sent');
+  $('#flSinkMeta').textContent=fl.stage===1?'Writing a batch to HDFS':fl.stage===2?'Committing: removing batch from channel':'Waiting for events';
+  const dupSeen=new Set();
+  $('#flHdfsCells').innerHTML=fl.hdfs.slice(-60).map(id=>{ const d=dupSeen.has(id); dupSeen.add(id); return `<i class="sq ${d?'dup':'sent'}" title="line ${id+1}"></i>`; }).join('');
+  $('#flHdfsMeta').textContent=`${fl.hdfs.length} lines in the file`;
+  $('#fsW').textContent=fl.W;
+  $('#fsU').textContent=fl.delivered.size;
+  $('#fsD').textContent=fl.dups;
+  $('#fsP').textContent=Math.max(0,fl.W-fl.delivered.size-fl.lost.size);
+  $('#fsL').textContent=fl.lost.size;
+}
+(function lesson5(){
+  flInit();
+  $('#flBurst').addEventListener('click',()=>{ for(let i=0;i<40;i++){ fl.status[fl.W]='unread'; fl.W++; } flRender(); pulse($('#flLogBox')); });
+  $('#flCrash').addEventListener('click',flCrash);
+  $('#flRestart').addEventListener('click',flRestart);
+  $('#flReset').addEventListener('click',flInit);
+  $('#flSrc').addEventListener('change',flInit);
+  $('#flCh').addEventListener('change',flInit);
+
+  // small files calculator
+  function sf(){
+    const n=+$('#sfEvents').value, lab=$('#sfLab').checked, bytes=n*95;
+    const files=lab?Math.max(1,Math.ceil(bytes/134217728)):Math.ceil(n/10);
+    const blocks=lab?Math.ceil(bytes/134217728):files;
+    const mem=(files+blocks)*150;
+    const fmt=b=>b>=1048576?(b/1048576).toFixed(1)+' MB':b>=1024?(b/1024).toFixed(1)+' KB':b+' bytes';
+    $('#sfFiles').textContent=files.toLocaleString();
+    $('#sfAvg').textContent=fmt(Math.round(bytes/files));
+    $('#sfMem').textContent=fmt(mem);
+    const per=Math.max(1,Math.ceil(files/400)), shown=Math.ceil(files/per);
+    $('#sfGrid').innerHTML=lab?'<i class="big"></i>'.repeat(Math.min(files,5)):'<i></i>'.repeat(shown);
+    $('#sfScale').textContent=lab?`${files.toLocaleString()} file${files>1?'':''}, about ${fmt(Math.round(bytes/files))} each, closed by size or by the 60-second backstop`:`Each square is ${per.toLocaleString()} files of about ${fmt(Math.round(bytes/files))}`;
+  }
+  $('#sfEvents').addEventListener('change',sf);
+  document.querySelectorAll('input[name=sfMode]').forEach(r=>r.addEventListener('change',sf));
+  sf();
+})();
+
+/* ---------- LESSON 6: quiz ---------- */
+const QUIZ=[
+  {q:'A producer sends three events with key web01. What does Kafka guarantee?',
+   o:['They are spread evenly across all partitions','They land in the same partition, in the order sent','They are delivered to every consumer in the group','They are deleted after the first consumer reads them'],a:1,
+   w:'The key is hashed to choose the partition, so the same key always maps to the same partition, and order is kept within a partition.'},
+  {q:'A topic has 3 partitions. A consumer group has 5 consumers. What happens?',
+   o:['Each consumer gets 0.6 of a partition','Two consumers sit idle','Kafka adds 2 partitions automatically','Every consumer reads every partition'],a:1,
+   w:'Within one group a partition is assigned to only one consumer. With 3 partitions, at most 3 consumers do work. Partition count is the ceiling on parallelism.'},
+  {q:'A consumer reads the event at offset 41. What happens to that event in Kafka?',
+   o:['It is removed from the partition','It is moved to a dead-letter topic','It stays until the retention period ends; only the group\'s offset moves','It is copied to ZooKeeper'],a:2,
+   w:'Reading only advances the consumer group\'s committed offset. That is why another group, or the same group after a reset, can replay it. A Flume channel, in contrast, deletes an event once the sink takes it.'},
+  {q:'Replication factor 3, min.insync.replicas=2, acks=all. Two brokers are down. A producer writes to a partition whose only in-sync copy is on the surviving broker. What happens?',
+   o:['The write succeeds and is stored on one broker','The write is refused with NotEnoughReplicas','The write waits forever','The write goes to ZooKeeper instead'],a:1,
+   w:'acks=all with min.insync.replicas=2 means an acknowledged write must exist on at least two copies. With one copy left, Kafka refuses the write rather than risk losing it.'},
+  {q:'In KRaft mode, where does the cluster metadata live?',
+   o:['In an external ZooKeeper ensemble','In each producer\'s memory','In an internal Kafka log replicated among the controllers with Raft','In HDFS'],a:2,
+   w:'KRaft stores metadata in the __cluster_metadata log. A quorum of controllers replicates it using the Raft consensus protocol, so no separate system is needed.'},
+  {q:'Why does controller failover take so much less time with KRaft than with ZooKeeper on a large cluster?',
+   o:['KRaft controllers run on faster hardware','Standby controllers already hold the metadata log and only need a quick vote','KRaft stores less metadata','ZooKeeper deliberately waits before electing'],a:1,
+   w:'A ZooKeeper-era controller had to read every partition\'s metadata back from ZooKeeper before acting, which grows with cluster size. KRaft standbys have been following the log all along, so they take over almost immediately.'},
+  {q:'A Flume agent with a memory channel is killed while 3,000 events are waiting in the channel. What happens to them?',
+   o:['They are written to HDFS on restart','They are lost, because the channel only existed in the JVM\'s RAM','They are moved to the file channel automatically','Kafka keeps a copy'],a:1,
+   w:'A memory channel lives in the agent process\'s heap. When the process dies, the buffered events die with it. A file channel writes them to a write-ahead log on disk first, so a restarted agent replays them.'},
+  {q:'An agent uses a file channel and the exec source (tail -F). It crashes during a burst and is restarted. Why can lines still be missing?',
+   o:['The file channel discards events older than 60 seconds','tail -F does not remember its position, so lines it had not read yet are skipped','HDFS rejects duplicate lines','The sink deletes them'],a:1,
+   w:'The file channel protects only what it has accepted. tail -F restarts at the end of the file, so unread lines are never collected. The TAILDIR source saves its read position to disk and resumes from it.'},
+  {q:'An HDFS sink is left with its default roll settings on a busy log. What is the main problem?',
+   o:['Files grow larger than one block','Thousands of tiny files, each costing NameNode memory','Events are written out of order','The channel fills up immediately'],a:1,
+   w:'With rollCount=10 and rollSize=1 KB, the sink starts a new file every few events. Each file and block is an object in NameNode memory, so millions of small files slow the whole cluster. Roll on size near one block instead.'}
+];
+(function quiz(){
+  const box=$('#quiz'); let score=0; $('#score').textContent=`0 / ${QUIZ.length}`;
+  box.innerHTML=QUIZ.map((x,i)=>`
+    <div class="q" data-i="${i}">
+      <h3 class="mb-2">${i+1}. ${x.q}</h3>
+      ${x.o.map((o,j)=>`<button class="btn btn-line opt" data-j="${j}">${o}</button>`).join('')}
+      <div class="why d-none" aria-live="polite"></div>
+    </div>`).join('');
+  box.addEventListener('click',e=>{
+    const b=e.target.closest('.opt'); if(!b) return;
+    const q=b.closest('.q'); if(q.dataset.done) return;
+    const i=+q.dataset.i, j=+b.dataset.j, x=QUIZ[i]; q.dataset.done=1;
+    q.querySelectorAll('.opt').forEach((ob,k)=>{ ob.disabled=true; if(k===x.a) ob.classList.add('right'); });
+    if(j===x.a){ score++; } else { b.classList.add('wrong'); }
+    const why=q.querySelector('.why'); why.classList.remove('d-none');
+    why.innerHTML=(j===x.a?'<strong>Right.</strong> ':'<strong>Not quite.</strong> ')+x.w;
+    $('#score').textContent=`${score} / ${QUIZ.length}`;
+  });
+})();
+
+})();
+</script>
+</body>
+</html>
